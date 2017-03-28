@@ -1,0 +1,11 @@
+body {
+    margin-left: 1ex;
+    margin-right: 1ex;
+}
+
+a[href^='https://']:after, a[href^='http://']:after {
+    /* external links */
+    margin-left: 0.25ex;
+    font-size: x-small;
+    content: "\1f30e";
+}

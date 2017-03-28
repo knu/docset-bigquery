@@ -1,0 +1,6 @@
+Gemfile.lock
+*.docset/
+*.tgz
+icon.png
+cloud.google.com/
+wget.log
