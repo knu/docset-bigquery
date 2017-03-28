@@ -7,7 +7,7 @@ How to use
     % bundle
     % rake
 
-    % open "BigQuery Standard SQL.docset"
+    % open BigQuery_Standard_SQL.docset"
 
 Requirements
 ------------

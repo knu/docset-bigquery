@@ -40,7 +40,7 @@ def expand(syntax)
   }
 end
 
-DOCSET = 'BigQuery Standard SQL.docset'
+DOCSET = 'BigQuery_Standard_SQL.docset'
 DOCSET_ARCHIVE = File.basename(DOCSET, '.docset') + '.tgz'
 DOCS_ROOT = File.join(DOCSET, 'Contents/Resources/Documents')
 DOCS_URI = URI('https://cloud.google.com/bigquery/docs/reference/standard-sql/')
