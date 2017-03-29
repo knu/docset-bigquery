@@ -131,7 +131,7 @@ task :build => :fetch do |t|
       uri = HOST_URI + path
       doc = Nokogiri::HTML(File.read(path), path)
 
-      doc.xpath('//meta[@property or @name] | //script | //link[not(@rel="stylesheet")]').each(&:remove)
+      doc.xpath('//meta[not(@charset or @name = "viewport")] | //script | //link[not(@rel="stylesheet")]').each(&:remove)
 
       [
         ['a', 'href'],
