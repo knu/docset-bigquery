@@ -122,6 +122,17 @@ task :build => :fetch do |t|
     INSERT OR IGNORE INTO searchIndex(name, type, path) VALUES (?, ?, ?);
   SQL
 
+  index_item = ->(path, node, type, name) {
+    a = Nokogiri::XML::Node.new('a', node.document)
+    a['name'] = id = '//apple_ref/cpp/%s/%s' % [type, name].map { |s|
+      URI.encode_www_form_component(s).gsub('+', '%20')
+    }
+    a['class'] = 'dashAnchor'
+    node.prepend_child(a)
+    url = "#{path}\##{id}"
+    insert.execute(name, type, url)
+  }
+
   puts 'Indexing documents'
 
   cp COMMON_CSS, File.join(DOCS_ROOT, HOST_URI.route_to(DOCS_URI).to_s)
@@ -168,8 +179,7 @@ task :build => :fetch do |t|
       doc.at('head') << link
 
       if h1 = doc.at('h1')
-        type = h1['id'] = 'h1'
-        insert.execute(h1.xpath('normalize-space(.)'), 'Section', "#{path}\##{type}")
+        index_item.(path, h1, 'Section', h1.xpath('normalize-space(.)'))
       end
 
       case basename = File.basename(path)
@@ -177,41 +187,38 @@ task :build => :fetch do |t|
         doc.css('h2[id]').each { |h|
           id = h['id']
           title = h.xpath('normalize-space(.)')
-          insert.execute(title, 'Section', "#{path}\##{id}")
+          index_item.(path, h, 'Section', title)
 
           case id
           when 'sql-prefix'
             h.xpath('./following-sibling::table[1]/tbody/tr/td[1]').each { |td|
               directive = td.xpath('normalize-space(.)')
-              insert.execute(directive, 'Directive', "#{path}\##{id}")
+              index_item.(path, td, 'Directive', directive)
             }
           end
         }
       when 'data-types.html'
         doc.css('h2[id], h3[id], h4[id], h5[id], h6[id]').each { |h|
-          id = h['id']
           case title = h.xpath('normalize-space(.)')
           when 'Format', 'Canonical format', 'Examples'
             next
           else
-            insert.execute(title, 'Section', "#{path}\##{id}")
+            index_item.(path, h, 'Section', title)
           end
         }
         doc.css('h2[id$="-type"]').each { |h|
-          id = h['id']
           h.xpath('./following-sibling::table[1]/tbody/tr/td[1]').each { |td|
             type = td.xpath('normalize-space(.)')
-            insert.execute(type, 'Type', "#{path}\##{id}")
+            index_item.(path, td, 'Type', type)
           }
         }
       when 'functions-and-operators.html'
         doc.css('h2[id], h3[id], h4[id], h5[id], h6[id]').each { |h|
-          id = h['id']
           case title = h.xpath('normalize-space(.)')
           when /\A(?<func>[A-Z][A-Z0-9]*(?:[_.][A-Z0-9]+)*)( and \g<func>)*(?: operators?)?\z/
             type = h.name == 'h6' ? 'Query' : 'Function'
             title.scan(/[A-Z][A-Z0-9]*(?:[_.][A-Z0-9]+)*/) { |name|
-              insert.execute(name, type, "#{path}\##{id}")
+              index_item.(path, h, type, name)
             }
             next
           when /\A(Arithmetic|Bitwise|Logical|Comparison) operators\z/
@@ -221,33 +228,32 @@ task :build => :fetch do |t|
                 op, rop, = syntax.gsub!(/\b[XYZ]\b/, '').split
               case op
               when '[NOT]'
-                insert.execute(rop, 'Operator', "#{path}\##{id}")
-                insert.execute("NOT #{rop}", 'Operator', "#{path}\##{id}")
+                index_item.(path, h, 'Operator', rop)
+                index_item.(path, h, 'Operator', "NOT #{rop}")
               else
-                insert.execute(op, 'Operator', "#{path}\##{id}")
+                index_item.(path, h, 'Operator', op)
               end
             }
           when 'Element access operators'
             h.xpath('./following-sibling::table[1]/tbody/tr/td[1]/text()').each { |text|
               syntax = text.xpath('normalize-space(.)').delete(' ')  # "[ ]" -> "[]"
-              insert.execute(syntax, 'Operator', "#{path}\##{id}")
+              index_item.(path, h, 'Operator', syntax)
             }
           when / operators\z/
             raise "#{path}: Unknown section: #{title}"
           when 'Casting'
-            insert.execute('CAST', 'Function', "#{path}\##{id}")
+            index_item.(path, h, 'Function', 'CAST')
           when 'Safe casting'
-            insert.execute('SAFE_CAST', 'Function', "#{path}\##{id}")
+            index_item.(path, h, 'Function', 'SAFE_CAST')
           end
-          insert.execute(title, 'Section', "#{path}\##{id}")
+          index_item.(path, h, 'Section', title)
         }
       else
         doc.css('h2[id], h3[id], h4[id], h5[id], h6[id]').each { |h|
-          id = h['id']
           case title = h.xpath('normalize-space(.)')
           when 'SQL Syntax'
             if basename == 'query-syntax.html'
-              insert.execute('SELECT', 'Statement', "#{path}\##{id}")
+              index_item.(path, h, 'Statement', 'SELECT')
             end
           when 'External UDF structure'
             statement = h.xpath('string(./following-sibling::ul[1]/li[1]/strong)')
@@ -257,10 +263,9 @@ task :build => :fetch do |t|
           when /\A(?<ws>(?<w>[A-Z]+)(?: \g<w>)*) (?<t>statement|keyword|clause)(?: and \g<ws> \k<t>)?\z/
             type = $~[:t] == 'statement' ? 'Statement' : 'Query'
             title.scan(/(?<ws>\G(?<w>[A-Z]+)(?: \g<w>)*)/) { |ws,|
-              insert.execute(ws, type, "#{path}\##{id}")
+              index_item.(path, h, type, ws)
             }
           when /\A(?:(?<w>[A-Z]+) )*(?<ow>\[\g<w>\] )?\g<w>\z/
-            optional = !!$~[:ow]
             type =
               case title
               when /\ASELECT\b/
@@ -273,10 +278,10 @@ task :build => :fetch do |t|
                 raise "#{path}: Unknown directive: #{title}"
               end
             expand(title) { |query|
-              insert.execute(query, type, "#{path}\##{id}")
+              index_item.(path, h, type, query)
             }
           end
-          insert.execute(title, 'Section', "#{path}\##{id}")
+          index_item.(path, h, 'Section', title)
         }
       end
 

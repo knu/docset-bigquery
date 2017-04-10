@@ -12,5 +12,7 @@
 	<true/>
 	<key>DashDocSetFallbackURL</key>
 	<string>https://cloud.google.com/bigquery/docs/reference/standard-sql/</string>
+	<key>DashDocSetFamily</key>
+	<string>dashtoc</string>
 </dict>
 </plist>
