@@ -256,8 +256,13 @@ task :build => :fetch do |t|
               index_item.(path, h, 'Statement', 'SELECT')
             end
           when 'External UDF structure'
-            statement = h.xpath('string(./following-sibling::ul[1]/li[1]/strong)')
-            statement
+            statement_node, *query_nodes = h.xpath('./following-sibling::ul[1]/li/strong')
+            expand(statement_node.text) { |statement|
+              index_item.(path, statement_node, 'Statement', statement)
+            }
+            query_nodes.each { |query_node|
+              index_item.(path, query_node, 'Query', query_node.text)
+            }
           when 'Syntax'
             next
           when /\A(?<ws>(?<w>[A-Z]+)(?: \g<w>)*) (?<t>statement|keyword|clause)(?: and \g<ws> \k<t>)?\z/
