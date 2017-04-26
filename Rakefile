@@ -231,6 +231,12 @@ task :build => :fetch do |t|
               index_item.(path, h, type, name)
             }
             next
+          when /\A(Numbering|Mathematical|Rounding|Trigonometric and hyperbolic) [Ff]unctions\z/
+            h.xpath('./following-sibling::table[1]/tbody/tr/td[1]').each { |td|
+              if name = td.xpath('normalize-space(.)')[/\A([A-Z][A-Z0-9]*(?:[_.][A-Z0-9]+)*)\(/, 1]
+                index_item.(path, td, 'Function', name)
+              end
+            }
           when /\A(Arithmetic|Bitwise|Logical|Comparison) operators\z/
             h.xpath('./following-sibling::table[1]/tbody/tr/td[2]/text()').each { |text|
               syntax = text.xpath('normalize-space(.)')
@@ -324,7 +330,11 @@ task :build => :fetch do |t|
     'Directive' => %w[#legacySQL #standardSQL],
     'Statement' => ['SELECT', 'INSERT', 'INSERT SELECT', 'UPDATE', 'DELETE'],
     'Query' => ['JOIN', 'INNER JOIN', 'GROUP BY', 'LIMIT'],
-    'Function' => ['CAST', 'SAFE_CAST', 'UNNEST'],
+    'Function' => ['CAST', 'SAFE_CAST', 'UNNEST',
+                   'DENSE_RANK', 'CUME_DIST',
+                   'GREATEST', 'LOG10',
+                   'COS', 'ASINH',
+                   'FLOOR'],
     'Operator' => ['+', '~', '^', '<=', '!=', '<>', '.', '[]',
                    'BETWEEN', 'NOT LIKE', 'AND', 'OR', 'NOT'],
   }.each { |type, names|
