@@ -223,6 +223,19 @@ task :build => :fetch do |t|
           }
         }
       when 'functions-and-operators.html'
+        doc.xpath('//table/thead/tr[1]/th[position() = 1 and (text() = "Syntax" or text() = "Function")]').each { |th|
+          th.xpath('./ancestor::table[1]/tbody/tr/td[1]').each { |td|
+            case text = td.xpath('normalize-space(.)')
+            when /\A([A-Z][A-Z0-9]*(?:[_.][A-Z0-9]+)*)\(/
+              index_item.(path, td, 'Function', $1)
+            when /\A(CASE(?: WHEN)?) /
+              index_item.(path, td, 'Function', $1)
+            else
+              raise "#{path}: Unknown function: #{text}"
+            end
+          }
+        }
+
         doc.css('h2[id], h3[id], h4[id], h5[id], h6[id]').each { |h|
           case title = h.xpath('normalize-space(.)')
           when /\A(?<func>[A-Z][A-Z0-9]*(?:[_.][A-Z0-9]+)*)( and \g<func>)*(?: operators?)?\z/
@@ -231,12 +244,6 @@ task :build => :fetch do |t|
               index_item.(path, h, type, name)
             }
             next
-          when /\A(Numbering|Mathematical|Rounding|Trigonometric and hyperbolic) [Ff]unctions\z/
-            h.xpath('./following-sibling::table[1]/tbody/tr/td[1]').each { |td|
-              if name = td.xpath('normalize-space(.)')[/\A([A-Z][A-Z0-9]*(?:[_.][A-Z0-9]+)*)\(/, 1]
-                index_item.(path, td, 'Function', name)
-              end
-            }
           when /\A(Arithmetic|Bitwise|Logical|Comparison) operators\z/
             h.xpath('./following-sibling::table[1]/tbody/tr/td[2]/text()').each { |text|
               syntax = text.xpath('normalize-space(.)')
@@ -331,6 +338,7 @@ task :build => :fetch do |t|
     'Statement' => ['SELECT', 'INSERT', 'INSERT SELECT', 'UPDATE', 'DELETE'],
     'Query' => ['JOIN', 'INNER JOIN', 'GROUP BY', 'LIMIT'],
     'Function' => ['CAST', 'SAFE_CAST', 'UNNEST',
+                   'CASE', 'CASE WHEN', 'COALESCE', 'NULLIF',
                    'DENSE_RANK', 'CUME_DIST',
                    'GREATEST', 'LOG10',
                    'COS', 'ASINH',
