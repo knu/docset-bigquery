@@ -49,7 +49,19 @@ DL_DIR = Pathname(DOCS_URI.host)
 ICON_SITE_URI = URI('https://cloudplatform-jp.googleblog.com/2015/04/google-bigquery.html')
 ICON_FILE = Pathname('icon.png')
 COMMON_CSS = Pathname('common.css')
+COMMON_CSS_URL = DOCS_URI + COMMON_CSS.basename.to_s
 FETCH_LOG = 'wget.log'
+URI_ATTRS = [
+  ['a', 'href'],
+  ['img', 'src'],
+  ['link', 'href'],
+  ['script', 'src'],
+]
+FILE_SUFFIXES = [
+  '',
+  '/index.html',
+  '.html'
+]
 
 def extract_version
   version = ''
@@ -144,25 +156,23 @@ task :build => :fetch do |t|
 
       doc.xpath('//meta[not(@charset or @name = "viewport")] | //script | //link[not(@rel="stylesheet")]').each(&:remove)
 
-      [
-        ['a', 'href'],
-        ['img', 'src'],
-        ['link', 'href'],
-        ['script', 'src'],
-      ].each { |tag, attr|
-        doc.css('%s[%s^="%s"]' % [tag, attr, HOST_URI.to_s]).each { |e|
-          abs = e[attr]
-          filepath = HOST_URI.route_to(abs).to_s
-          case filepath
-          when 'bigquery/sql-reference/'
-            e[attr] = uri.route_to(DOCS_URI + 'index.html').to_s
+      URI_ATTRS.each { |tag, attr|
+        doc.css("#{tag}[#{attr}]").each { |e|
+          abs = uri + e[attr]
+          rel = HOST_URI.route_to(abs)
+          next if rel.host || %r{\A\.\./} === rel.path
+          case localpath = rel.path.chomp('/')
+          when 'bigquery/sql-reference'
+            abs.path = (DOCS_URI + 'index.html').path
+            e[attr] = uri.route_to(abs)
           else
-            if File.file?(filepath)
-              e[attr] = uri.route_to(abs).to_s
-            elsif File.directory?(filepath) &&
-                  File.file?(File.join(filepath.chomp('/'), 'index.html'))
-              e[attr] = uri.route_to(File.join(abs.chomp('/'), 'index.html')).to_s
-            end
+            FILE_SUFFIXES.each { |suffix|
+              if File.file?(localpath + suffix)
+                abs.path = abs.path.chomp('/') + suffix
+                e[attr] = uri.route_to(abs)
+                break
+              end
+            }
           end
         }
       }
@@ -175,7 +185,7 @@ task :build => :fetch do |t|
 
       link = Nokogiri::XML::Node.new('link', doc)
       link['rel'] = 'stylesheet'
-      link['href'] = COMMON_CSS.basename.to_s
+      link['href'] = uri.route_to(COMMON_CSS_URL)
       doc.at('head') << link
 
       if h1 = doc.at('h1')
