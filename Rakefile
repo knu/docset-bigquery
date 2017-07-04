@@ -51,6 +51,9 @@ ICON_FILE = Pathname('icon.png')
 COMMON_CSS = Pathname('common.css')
 COMMON_CSS_URL = DOCS_URI + COMMON_CSS.basename.to_s
 FETCH_LOG = 'wget.log'
+DUC_WORKTREE = 'Dash-User-Contributions'
+DUC_BRANCH = 'bigquery_standard_sql'
+
 URI_ATTRS = [
   ['a', 'href'],
   ['img', 'src'],
@@ -354,9 +357,13 @@ task :build => :fetch do |t|
   puts "Finished creating #{target} version #{extract_version()}"
 end
 
-task :prepare, [:workdir] do |t, args|
+file DUC_WORKTREE do |t|
+  sh 'env', 'GIT_DIR=../Dash-User-Contributions/.git', 'git', 'worktree', 'add', t.name, DUC_BRANCH
+end
+
+task :prepare => DUC_WORKTREE do |t, args|
   version = extract_version
-  workdir = Pathname(args[:workdir] || '../Dash-User-Contributions') / 'docsets/BigQuery_Standard_SQL'
+  workdir = Pathname(DUC_WORKTREE) / 'docsets/BigQuery_Standard_SQL'
 
   docset_json = workdir / 'docset.json'
   archive = workdir / DOCSET_ARCHIVE
@@ -365,7 +372,7 @@ task :prepare, [:workdir] do |t, args|
   puts "Resetting the working directory"
   Dir.chdir(workdir.to_s) {
     sh 'git', 'remote', 'update'
-    sh 'git', 'checkout', 'bigquery_standard_sql'
+    sh 'git', 'checkout', DUC_BRANCH
     sh 'git', 'reset', '--hard', 'upstream/master'
   }
 
@@ -392,6 +399,8 @@ task :prepare, [:workdir] do |t, args|
     sh 'git', 'add', *[archive, versioned_archive, docset_json].map { |path|
       path.relative_path_from(workdir).to_s
     }
+    sh 'git', 'commit', '-m', "Update BigQuery Standard SQL docset to #{version}"
+    sh 'git', 'push', '-f', 'origin', DUC_BRANCH
   }
 end
 
