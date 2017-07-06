@@ -40,7 +40,8 @@ def expand(syntax)
   }
 end
 
-DOCSET = 'BigQuery_Standard_SQL.docset'
+DOCSET_NAME = 'BigQuery Standard SQL'
+DOCSET = "#{DOCSET_NAME.tr(' ', '_')}.docset"
 DOCSET_ARCHIVE = File.basename(DOCSET, '.docset') + '.tgz'
 DOCS_ROOT = File.join(DOCSET, 'Contents/Resources/Documents')
 DOCS_URI = URI('https://cloud.google.com/bigquery/docs/reference/standard-sql/')
@@ -81,7 +82,7 @@ def extract_version
   version
 end
 
-desc 'Fetch the BigQuery Standard SQL document files.'
+desc "Fetch the #{DOCSET_NAME} document files."
 task :fetch => [DL_DIR, ICON_FILE]
 
 file DL_DIR do |t|
@@ -375,7 +376,7 @@ end
 
 task :prepare => DUC_WORKDIR do |t, args|
   version = extract_version
-  workdir = Pathname(DUC_WORKDIR) / 'docsets/BigQuery_Standard_SQL'
+  workdir = Pathname(DUC_WORKDIR) / 'docsets' / File.basename(DOCSET, '.docset')
 
   docset_json = workdir / 'docset.json'
   archive = workdir / DOCSET_ARCHIVE
@@ -415,7 +416,7 @@ task :prepare => DUC_WORKDIR do |t, args|
         sh 'git', 'add', *[archive, versioned_archive, docset_json].map { |path|
           path.relative_path_from(workdir).to_s
         }
-        sh 'git', 'commit', '-m', "Update BigQuery Standard SQL docset to #{version}"
+        sh 'git', 'commit', '-m', "Update #{DOCSET_NAME} docset to #{version}"
         sh 'git', 'push', '-f', 'origin', DUC_BRANCH
       end
     end
