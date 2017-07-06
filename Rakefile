@@ -108,7 +108,13 @@ file ICON_FILE do |t|
     page = agent.get(ICON_SITE_URI)
     image = page.image_with(xpath: '//img[@title="Google BigQuery"]')
     image.fetch.save!(temp.path)
-    sh 'sips', '-z', '64', '64', temp.path, '--out', t.name
+    sh 'type', 'sips' do |ok, _res|
+      if ok
+        sh 'sips', '-z', '64', '64', temp.path, '--out', t.name
+      else
+        sh 'convert', '-resample', '64x64', temp.path, t.name
+      end
+    end
   }
 end
 
