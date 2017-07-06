@@ -69,12 +69,12 @@ FILE_SUFFIXES = [
 def extract_version
   version = ''
 
-  Dir.chdir(DOCS_ROOT) {
+  cd DOCS_ROOT do
     Dir.glob("#{HOST_URI.route_to(DOCS_URI)}*.html") { |path|
       doc = Nokogiri::HTML(File.read(path), path)
       version = [version, Time.parse(doc.at('//p[@itemprop="datePublished"]/@content').value).strftime('%Y.%m.%d')].max
     }
-  }
+  end
 
   version
 end
@@ -158,7 +158,7 @@ task :build => :fetch do |t|
 
   cp COMMON_CSS, File.join(DOCS_ROOT, HOST_URI.route_to(DOCS_URI).to_s)
 
-  Dir.chdir(DOCS_ROOT) {
+  cd DOCS_ROOT do
     Dir.glob("#{HOST_URI.route_to(DOCS_URI)}*.html") { |path|
       uri = HOST_URI + path
       doc = Nokogiri::HTML(File.read(path), path)
@@ -324,7 +324,7 @@ task :build => :fetch do |t|
 
       File.write(path, doc.to_s)
     }
-  }
+  end
 
   get_count = ->(**criteria) do
     db.get_first_value(<<-SQL, criteria.values)
@@ -376,11 +376,11 @@ task :prepare => DUC_WORKTREE do |t, args|
   versioned_archive = workdir / 'versions' / version / DOCSET_ARCHIVE
 
   puts "Resetting the working directory"
-  Dir.chdir(workdir.to_s) {
+  cd workdir.to_s do
     sh 'git', 'remote', 'update'
     sh 'git', 'checkout', DUC_BRANCH
     sh 'git', 'reset', '--hard', 'upstream/master'
-  }
+  end
 
   sh 'tar', '-zcf', DOCSET_ARCHIVE, '--exclude=.DS_Store', DOCSET and
     mv DOCSET_ARCHIVE, archive and
@@ -401,13 +401,13 @@ task :prepare => DUC_WORKTREE do |t, args|
     f.truncate(f.tell)
   }
 
-  Dir.chdir(workdir.to_s) {
+  cd workdir.to_s do
     sh 'git', 'add', *[archive, versioned_archive, docset_json].map { |path|
       path.relative_path_from(workdir).to_s
     }
     sh 'git', 'commit', '-m', "Update BigQuery Standard SQL docset to #{version}"
     sh 'git', 'push', '-f', 'origin', DUC_BRANCH
-  }
+  end
 end
 
 desc 'Delete all fetched files and generated files'
