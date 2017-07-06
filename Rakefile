@@ -374,7 +374,8 @@ file DUC_WORKDIR do |t|
   end
 end
 
-task :prepare => DUC_WORKDIR do |t, args|
+desc 'Push the generated docset if there is an update'
+task :push => DUC_WORKDIR do
   version = extract_version
   workdir = Pathname(DUC_WORKDIR) / 'docsets' / File.basename(DOCSET, '.docset')
 
