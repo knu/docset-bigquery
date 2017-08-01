@@ -85,46 +85,56 @@ def extract_version
 end
 
 desc "Fetch the #{DOCSET_NAME} document files."
-task :fetch => [DL_DIR, ICON_FILE]
+task :fetch => %i[fetch:icon fetch:docs]
 
-file DL_DIR do |t|
-  puts 'Downloading %s' % DOCS_URI
-  sh 'wget', '-nv', '--append-output', FETCH_LOG, '-r', '--no-parent', '-nc', '-p',
-     '--reject-regex=\?hl=', '--reject-regex=/standard-sql/[^./]+$', DOCS_URI.to_s
+namespace :fetch do
+  task :docs do
+    puts 'Downloading %s' % DOCS_URI
+    sh 'wget', '-nv', '--append-output', FETCH_LOG, '-r', '--no-parent', '-N', '-p',
+       '--reject-regex=\?hl=', '--reject-regex=/standard-sql/[^./]+$', DOCS_URI.to_s
 
-  # Google responds with gzip'd asset files despite wget's sending
-  # `Accept-Encoding: identity`, and wget has no capability in
-  # decoding gzip contents.
-  Dir.glob("#{t.name}/**/*") { |path|
-    next unless File.file?(path)
-    begin
-      data = Zlib::GzipReader.open(path, &:read)
-    rescue Zlib::GzipFile::Error
-    else
-      puts "Uncompressing #{path}"
-      File.write(path, data)
-    end
-  }
+    # Google responds with gzip'd asset files despite wget's sending
+    # `Accept-Encoding: identity`, and wget has no capability in
+    # decoding gzip contents.
+    Dir.glob("#{DL_DIR}/**/*") { |path|
+      next unless File.file?(path)
+      begin
+        data = Zlib::GzipReader.open(path, &:read)
+      rescue Zlib::GzipFile::Error
+      else
+        puts "Uncompressing #{path}"
+        File.write(path, data)
+      end
+    }
+  end
+
+  task :icon do 
+    Tempfile.create(['icon', '.png']) { |temp|
+      agent = Mechanize.new
+      page = agent.get(ICON_SITE_URI)
+      image = page.image_with(xpath: '//img[@title="Google BigQuery"]')
+      image.fetch.save!(temp.path)
+      sh 'type', 'sips' do |ok, _res|
+        if ok
+          sh 'sips', '-z', '64', '64', temp.path, '--out', ICON_FILE.to_s
+        else
+          sh 'convert', '-resample', '64x64', temp.path, ICON_FILE.to_s
+        end
+      end
+    }
+  end
 end
 
-file ICON_FILE do |t|
-  Tempfile.create(['icon', '.png']) { |temp|
-    agent = Mechanize.new
-    page = agent.get(ICON_SITE_URI)
-    image = page.image_with(xpath: '//img[@title="Google BigQuery"]')
-    image.fetch.save!(temp.path)
-    sh 'type', 'sips' do |ok, _res|
-      if ok
-        sh 'sips', '-z', '64', '64', temp.path, '--out', t.name
-      else
-        sh 'convert', '-resample', '64x64', temp.path, t.name
-      end
-    end
-  }
+file DL_DIR do
+  Rake::Task[:'fetch:docs'].invoke
+end
+
+file ICON_FILE do
+  Rake::Task[:'fetch:icon'].invoke
 end
 
 desc 'Build a docset in the current directory.'
-task :build => :fetch do |t|
+task :build => [DL_DIR, ICON_FILE] do |t|
   target = DOCSET
 
   rm_rf target
