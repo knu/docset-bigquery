@@ -322,7 +322,7 @@ task :build => [DL_DIR, ICON_FILE] do |t|
               case title
               when /\ASELECT\b/
                 'Statement'
-              when /\bJOIN\z/, 'UNION'
+              when /\bJOIN\z/, 'UNION', 'FOR SYSTEM TIME AS OF'
                 'Query'
               when 'UNNEST'
                 'Function'
