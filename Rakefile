@@ -91,7 +91,11 @@ namespace :fetch do
   task :docs do
     puts 'Downloading %s' % DOCS_URI
     sh 'wget', '-nv', '--append-output', FETCH_LOG, '-r', '--no-parent', '-N', '-p',
-       '--reject-regex=\?hl=', '--reject-regex=/standard-sql/[^./]+$', DOCS_URI.to_s
+       '--regex-type=posix',
+       '--reject-regex=\?hl=',
+       '--reject-regex=/standard-sql/[^./]+$',
+       '--reject-regex=https://cloud\.google\.com/images/(artwork|backgrounds|home|icons|logos)/',
+       DOCS_URI.to_s
 
     # Google responds with gzip'd asset files despite wget's sending
     # `Accept-Encoding: identity`, and wget has no capability in
