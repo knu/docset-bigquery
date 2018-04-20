@@ -91,7 +91,7 @@ namespace :fetch do
   task :docs do
     puts 'Downloading %s' % DOCS_URI
     sh 'wget', '-nv', '--append-output', FETCH_LOG, '-r', '--no-parent', '-N', '-p',
-       '--reject-regex=\?hl=|/standard-sql/[^./?]+$|://cloud\.google\.com/images/(artwork|backgrounds|home|icons|logos)/',
+       '--reject-regex=\?hl=|/standard-sql/[^./?]+$|://cloud\.google\.com/images/(artwork|backgrounds|home|icons|logos)/|\.md$',
        DOCS_URI.to_s
 
     # Google responds with gzip'd asset files despite wget's sending
@@ -183,7 +183,7 @@ task :build => [DL_DIR, ICON_FILE] do |t|
 
       URI_ATTRS.each { |tag, attr|
         doc.css("#{tag}[#{attr}]").each { |e|
-          abs = uri + e[attr]
+          abs = uri + e[attr].sub(/\.md\z/, '')
           rel = HOST_URI.route_to(abs)
           next if rel.host || %r{\A\.\./} === rel.path
           case localpath = rel.path.chomp('/')
