@@ -247,6 +247,16 @@ task :build => [DL_DIR, ICON_FILE] do |t|
             index_item.(path, td, 'Type', type)
           }
         }
+        doc.xpath('//table/thead/tr[1]/th[position() = 1 and text() = "Name"]').each { |th|
+          th.xpath('./ancestor::table[1]/tbody/tr/td[1]').each { |td|
+            case text = td.xpath('normalize-space(.)')
+            when /\A[A-Z][A-Z0-9]*\z/
+              index_item.(path, td, 'Type', text)
+            else
+              raise "#{path}: Unknown type: #{text}"
+            end
+          }
+        }
       when 'functions-and-operators.html'
         doc.xpath('//table/thead/tr[1]/th[position() = 1 and (text() = "Syntax" or text() = "Function")]').each { |th|
           th.xpath('./ancestor::table[1]/tbody/tr/td[1]').each { |td|
@@ -368,6 +378,9 @@ task :build => [DL_DIR, ICON_FILE] do |t|
                    'GREATEST', 'LOG10',
                    'COS', 'ASINH',
                    'FLOOR'],
+    'Type' => ['INT64', 'FLOAT64', 'NUMERIC', 'BOOL', 'STRING', 'BYTES',
+               'DATE', 'DATETIME', 'TIME', 'TIMESTAMP',
+               'ARRAY', 'STRUCT'],
     'Operator' => ['+', '~', '^', '<=', '!=', '<>', '.', '[]',
                    'BETWEEN', 'NOT LIKE', 'AND', 'OR', 'NOT'],
   }.each { |type, names|
