@@ -139,19 +139,17 @@ end
 
 desc 'Build a docset in the current directory.'
 task :build => [DL_DIR, ICON_FILE] do |t|
-  target = DOCSET
-
-  rm_rf target
+  rm_rf DOCSET
 
   mkdir_p DOCS_ROOT
 
-  cp 'Info.plist', File.join(target, 'Contents')
-  cp ICON_FILE, target
+  cp 'Info.plist', File.join(DOCSET, 'Contents')
+  cp ICON_FILE, DOCSET
 
   cp_r DL_DIR.to_s + '/.', DOCS_ROOT
 
   # Index
-  db = SQLite3::Database.new(File.join(target, INDEX_RELPATH))
+  db = SQLite3::Database.new(DOCS_INDEX)
 
   db.execute(<<-SQL)
     CREATE TABLE searchIndex(id INTEGER PRIMARY KEY, name TEXT, type TEXT, path TEXT);
@@ -394,7 +392,7 @@ task :build => [DL_DIR, ICON_FILE] do |t|
     }
   }
 
-  puts "Finished creating #{target} version #{extract_version()}"
+  puts "Finished creating #{DOCSET} version #{extract_version()}"
 
   db.close
 
