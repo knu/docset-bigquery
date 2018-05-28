@@ -43,7 +43,10 @@ end
 DOCSET_NAME = 'BigQuery Standard SQL'
 DOCSET = "#{DOCSET_NAME.tr(' ', '_')}.docset"
 DOCSET_ARCHIVE = File.basename(DOCSET, '.docset') + '.tgz'
-DOCS_ROOT = File.join(DOCSET, 'Contents/Resources/Documents')
+ROOT_RELPATH = 'Contents/Resources/Documents'
+INDEX_RELPATH = 'Contents/Resources/docSet.dsidx'
+DOCS_ROOT = File.join(DOCSET, ROOT_RELPATH)
+DOCS_INDEX = File.join(DOCSET, INDEX_RELPATH)
 DOCS_URI = URI('https://cloud.google.com/bigquery/docs/reference/standard-sql/')
 HOST_URI = DOCS_URI + '/'
 DL_DIR = Pathname(DOCS_URI.host)
@@ -148,7 +151,7 @@ task :build => [DL_DIR, ICON_FILE] do |t|
   cp_r DL_DIR.to_s + '/.', DOCS_ROOT
 
   # Index
-  db = SQLite3::Database.new(File.join(target, 'Contents/Resources/docSet.dsidx'))
+  db = SQLite3::Database.new(File.join(target, INDEX_RELPATH))
 
   db.execute(<<-SQL)
     CREATE TABLE searchIndex(id INTEGER PRIMARY KEY, name TEXT, type TEXT, path TEXT);
@@ -394,6 +397,72 @@ task :build => [DL_DIR, ICON_FILE] do |t|
   puts "Finished creating #{target} version #{extract_version()}"
 
   db.close
+
+  Rake::Task[:diff].invoke
+end
+
+task :diff do
+  system "rake diff:index diff:docs | #{ENV['PAGER'] || 'more'}"
+end
+
+namespace :diff do
+  desc 'Show the differences in the index from an installed version.'
+  task :index do
+    old_index = File.join(File.expand_path('~/Library/Application Support/Dash/User Contributed'), DOCSET_NAME, DOCSET, INDEX_RELPATH)
+
+    unless File.exist?(old_index)
+      puts "No installed version found."
+      exit
+    end
+
+    begin
+      sql = "SELECT name, type, path FROM searchIndex ORDER BY name"
+
+      odb = SQLite3::Database.new(old_index)
+      ndb = SQLite3::Database.new(DOCS_INDEX)
+
+      Tempfile.create(['old', '.txt']) { |otxt|
+        odb.execute(sql) { |row|
+          otxt.puts row.join("\t")
+        }
+        odb.close
+        otxt.close
+
+        Tempfile.create(['new', '.txt']) { |ntxt|
+          ndb.execute(sql) { |row|
+            ntxt.puts row.join("\t")
+          }
+          ndb.close
+          ntxt.close
+
+          sh 'diff', '-U3', otxt.path, ntxt.path do
+            # ignore status
+          end
+        }
+      }
+    ensure
+      odb&.close
+      ndb&.close
+    end
+  end
+
+  desc 'Show the differences in the docs from an installed version.'
+  task :docs do
+    old_root = File.join(File.expand_path('~/Library/Application Support/Dash/User Contributed'), DOCSET_NAME, DOCSET, ROOT_RELPATH)
+
+    unless File.exist?(old_root)
+      puts "No installed version found."
+      exit
+    end
+
+    sh 'diff', '-rNU3',
+      '-x', '*.js',
+      '-x', '*.css',
+      '-x', '*.svg',
+      old_root, DOCS_ROOT do
+      # ignore status
+    end
+  end
 end
 
 file DUC_WORKDIR do |t|
