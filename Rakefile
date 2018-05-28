@@ -352,6 +352,8 @@ task :build => [DL_DIR, ICON_FILE] do |t|
     }
   end
 
+  insert.close
+
   get_count = ->(**criteria) do
     db.get_first_value(<<-SQL, criteria.values)
       SELECT COUNT(*) from searchIndex where #{
@@ -390,6 +392,8 @@ task :build => [DL_DIR, ICON_FILE] do |t|
   }
 
   puts "Finished creating #{target} version #{extract_version()}"
+
+  db.close
 end
 
 file DUC_WORKDIR do |t|
