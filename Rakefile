@@ -314,7 +314,7 @@ task :build => [DL_DIR, ICON_FILE] do |t|
             if basename == 'query-syntax.html'
               index_item.(path, h, 'Statement', 'SELECT')
             end
-          when 'External UDF structure'
+          when 'General UDF Syntax'
             statement_node, *query_nodes = h.xpath('./following-sibling::ul[1]/li/strong')
             expand(statement_node.text) { |statement|
               index_item.(path, statement_node, 'Statement', statement)
