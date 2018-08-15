@@ -157,7 +157,7 @@ task :build => [DL_DIR, ICON_FILE] do |t|
 
   cp_r DL_DIR.to_s + '/.', DOCS_ROOT
 
-  puts "Generating docset for #{DOCSET_NAME} version #{extract_version()}"
+  puts "Generating docset for #{DOCSET_NAME} #{extract_version()}"
 
   # Index
   db = SQLite3::Database.new(DOCS_INDEX)
@@ -403,7 +403,7 @@ task :build => [DL_DIR, ICON_FILE] do |t|
     }
   }
 
-  puts "Finished creating #{DOCSET} version #{extract_version()}"
+  puts "Finished creating #{DOCSET} #{extract_version()}"
 
   db.close
 
