@@ -157,6 +157,8 @@ task :build => [DL_DIR, ICON_FILE] do |t|
 
   cp_r DL_DIR.to_s + '/.', DOCS_ROOT
 
+  puts "Generating docset for #{DOCSET_NAME} version #{extract_version()}"
+
   # Index
   db = SQLite3::Database.new(DOCS_INDEX)
 
