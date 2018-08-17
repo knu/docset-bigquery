@@ -82,7 +82,9 @@ def extract_version
   cd DOCS_ROOT do
     Dir.glob("#{HOST_URI.route_to(DOCS_URI)}*.html") { |path|
       doc = Nokogiri::HTML(File.read(path), path)
-      version = [version, Time.parse(doc.at('//p[@itemprop="datePublished"]/@content').value).strftime('%Y.%m.%d')].max
+      if date_published = doc.at('//p[@itemprop="datePublished"]/@content')
+        version = [version, Time.parse(date_published.value).strftime('%Y.%m.%d')].max
+      end
     }
   end
 
