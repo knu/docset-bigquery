@@ -8,6 +8,7 @@ require 'tempfile'
 require 'time'
 require 'uri'
 require 'zlib'
+require 'rubygems/version'
 
 def expand(syntax)
   arrays = syntax.scan(/\w+|\[.*?\]|\S+/).map { |part|
@@ -43,8 +44,6 @@ end
 DOCSET_NAME = 'BigQuery Standard SQL'
 DOCSET = "#{DOCSET_NAME.tr(' ', '_')}.docset"
 DOCSET_ARCHIVE = File.basename(DOCSET, '.docset') + '.tgz'
-PREVIOUS_DOCSET = File.join('tmp', DOCSET)
-INSTALLED_DOCSET = File.join(File.expand_path('~/Library/Application Support/Dash/User Contributed'), DOCSET_NAME, DOCSET)
 ROOT_RELPATH = 'Contents/Resources/Documents'
 INDEX_RELPATH = 'Contents/Resources/docSet.dsidx'
 DOCS_ROOT = File.join(DOCSET, ROOT_RELPATH)
@@ -91,11 +90,19 @@ def extract_version
   version
 end
 
+def previous_version
+  current_version = Gem::Version.new(extract_version)
+  previous_version = Pathname.glob("versions/*/#{DOCSET}").map { |path|
+    Gem::Version.new(path.parent.basename.to_s)
+  }.sort.each_cons(2) { |i, j|
+    break i if j >= current_version
+  }&.to_s
+end
+
 def previous_docset
-  [
-    INSTALLED_DOCSET,
-    PREVIOUS_DOCSET
-  ].find { |f| File.exist?(f) } or raise 'No previous version found'
+  version = previous_version or raise 'No previous version found'
+
+  "versions/#{version}/#{DOCSET}"
 end
 
 desc "Fetch the #{DOCSET_NAME} document files."
@@ -159,7 +166,9 @@ task :build => [DL_DIR, ICON_FILE] do |t|
 
   cp_r DL_DIR.to_s + '/.', DOCS_ROOT
 
-  puts "Generating docset for #{DOCSET_NAME} #{extract_version()}"
+  version = extract_version or raise "Version unknown"
+
+  puts "Generating docset for #{DOCSET_NAME} #{version}"
 
   # Index
   db = SQLite3::Database.new(DOCS_INDEX)
@@ -405,9 +414,12 @@ task :build => [DL_DIR, ICON_FILE] do |t|
     }
   }
 
-  puts "Finished creating #{DOCSET} #{extract_version()}"
-
   db.close
+
+  mkdir_p "versions/#{version}/#{DOCSET}"
+  sh 'rsync', '-a', '--exclude=.DS_Store', '--delete', "#{DOCSET}/", "versions/#{version}/#{DOCSET}/"
+
+  puts "Finished creating #{DOCSET} #{version}"
 
   Rake::Task[:diff].invoke
 end
@@ -496,10 +508,10 @@ task :push => DUC_WORKDIR do
     end
   end
 
-  sh 'tar', '-zcf', DOCSET_ARCHIVE, '--exclude=.DS_Store', DOCSET and
-    mv DOCSET_ARCHIVE, archive and
-    mkdir_p versioned_archive.dirname and
-    cp archive, versioned_archive
+  sh 'tar', '-zcf', DOCSET_ARCHIVE, '--exclude=.DS_Store', DOCSET
+  mv DOCSET_ARCHIVE, archive
+  mkdir_p versioned_archive.dirname
+  cp archive, versioned_archive
 
   puts "Updating #{docset_json}"
   File.open(docset_json, 'r+') { |f|
