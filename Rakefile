@@ -112,7 +112,7 @@ namespace :fetch do
   task :docs do
     puts 'Downloading %s' % DOCS_URI
     sh 'wget', '-nv', '--append-output', FETCH_LOG, '-r', '--no-parent', '-N', '-p',
-       '--reject-regex=\?hl=|/standard-sql/[^./?]+$|://cloud\.google\.com/images/(artwork|backgrounds|home|icons|logos)/|\.md$',
+       '--reject-regex=\?hl=|://cloud\.google\.com/images/(artwork|backgrounds|home|icons|logos)/|\.md$',
        DOCS_URI.to_s
 
     # Google responds with gzip'd asset files despite wget's sending
@@ -126,6 +126,16 @@ namespace :fetch do
       else
         puts "Uncompressing #{path}"
         File.write(path, data)
+      end
+
+      if !path.end_with?('.html') &&
+          File.open(path) { |f| f.read(255).include?('<!DOCTYPE html>') }
+        path_with_suffix = path + '.html'
+        if File.file?(path_with_suffix)
+          rm path
+        else
+          mv path, path_with_suffix
+        end
       end
     }
   end
@@ -241,7 +251,7 @@ task :build => [DL_DIR, ICON_FILE] do |t|
       end
 
       case basename = File.basename(path)
-      when 'enabling-standard-sql.html'
+      when 'index.html'
         doc.css('h2[id]').each { |h|
           id = h['id']
           title = h.xpath('normalize-space(.)')
@@ -281,6 +291,9 @@ task :build => [DL_DIR, ICON_FILE] do |t|
           }
         }
       when 'functions-and-operators.html'
+        # This page is now a one-page function reference that wraps up
+        # the following pages.
+      when /_functions\.html\z/, 'conversion_rules.html', 'conditional_expressions.html', 'operators.html'
         doc.xpath('//table/thead/tr[1]/th[position() = 1 and (text() = "Syntax" or text() = "Function")]').each { |th|
           th.xpath('./ancestor::table[1]/tbody/tr/td[1]').each { |td|
             case text = td.xpath('normalize-space(.)')
@@ -296,7 +309,8 @@ task :build => [DL_DIR, ICON_FILE] do |t|
 
         doc.css('h2[id], h3[id], h4[id], h5[id], h6[id]').each { |h|
           case title = h.xpath('normalize-space(.)')
-          when /\A(?<func>[A-Z][A-Z0-9]*(?:[_.][A-Z0-9]+)*)( and \g<func>)*(?: operators?)?\z/
+          when /\A(?<func>[A-Z][A-Z0-9]*(?:[_.][A-Z0-9]+)*)( (?:and|or) \g<func>)*(?: operators?)?\z/
+            # 'or' is for 'JSON_EXTRACT or JSON_EXTRACT_SCALAR'
             type = h.name == 'h6' ? 'Query' : 'Function'
             title.scan(/[A-Z][A-Z0-9]*(?:[_.][A-Z0-9]+)*/) { |name|
               index_item.(path, h, type, name)
@@ -329,8 +343,15 @@ task :build => [DL_DIR, ICON_FILE] do |t|
           end
           index_item.(path, h, 'Section', title)
         }
+      when 'aead-encryption-concepts.html'
+        doc.css('h2[id], h3[id], h4[id], h5[id], h6[id]').each { |h|
+          title = h.xpath('normalize-space(.)')
+          index_item.(path, h, 'Section', title)
+        }
       else
         doc.css('h2[id], h3[id], h4[id], h5[id], h6[id]').each { |h|
+          next if h.at_xpath('./ancestor::*[contains(@class, "ds-selector-tabs")]')
+
           case title = h.xpath('normalize-space(.)')
           when 'SQL Syntax'
             if basename == 'query-syntax.html'
@@ -346,7 +367,7 @@ task :build => [DL_DIR, ICON_FILE] do |t|
             }
           when 'Syntax'
             next
-          when /\A(?<ws>(?<w>[A-Z]+)(?: \g<w>)*) (?<t>statement|keyword|clause)(?: and \g<ws> \k<t>)?\z/
+          when /\A(?<ws>(?<w>[A-Z]+)(?: \g<w>)*) (?<t>statement|keyword|[cC]lause)(?: and \g<ws> \k<t>)?\z/
             type = $~[:t] == 'statement' ? 'Statement' : 'Query'
             title.scan(/(?<ws>\G(?<w>[A-Z]+)(?: \g<w>)*)/) { |ws,|
               index_item.(path, h, type, ws)
@@ -356,7 +377,8 @@ task :build => [DL_DIR, ICON_FILE] do |t|
               case title
               when /\ASELECT\b/
                 'Statement'
-              when /\bJOIN\z/, 'UNION', 'INTERSECT', 'EXCEPT', 'FOR SYSTEM_TIME AS OF'
+              when /\bJOIN\z/, 'UNION', 'INTERSECT', 'EXCEPT', 'FOR SYSTEM_TIME AS OF',
+                  'ROWS', 'RANGE'
                 'Query'
               when 'UNNEST'
                 'Function'
@@ -396,18 +418,41 @@ task :build => [DL_DIR, ICON_FILE] do |t|
   {
     'Directive' => %w[#legacySQL #standardSQL],
     'Statement' => ['SELECT', 'INSERT', 'INSERT SELECT', 'UPDATE', 'DELETE'],
-    'Query' => ['JOIN', 'INNER JOIN', 'UNION', 'INTERSECT', 'EXCEPT', 'FOR SYSTEM_TIME AS OF', 'GROUP BY', 'LIMIT'],
+    'Query' => ['JOIN', 'INNER JOIN',
+                'UNION', 'INTERSECT', 'EXCEPT',
+                'FOR SYSTEM_TIME AS OF',
+                'GROUP BY', 'LIMIT',
+                'ROWS'],
     'Function' => ['CAST', 'SAFE_CAST', 'UNNEST',
-                   'CASE', 'CASE WHEN', 'COALESCE', 'NULLIF',
+                   'AEAD.ENCRYPT', 'KEYS.NEW_KEYSET',
+                   'ARRAY_AGG', 'COUNTIF', 'LOGICAL_AND', 'MAX',
+                   'APPROX_COUNT_DISTINCT',
+                   'ARRAY', 'ARRAY_REVERSE', 'SAFE_OFFSET',
+                   'BIT_COUNT',
+                   'DATE_DIFF', 'UNIX_DATE',
+                   'DATETIME_DIFF',
+                   'ERROR',
+                   'ST_DWITHIN',
+                   'SHA256',
+                   'HLL_COUNT.MERGE',
+                   'JSON_EXTRACT',
+                   'COS', 'GREATEST', 'TRUNC',
+                   'NTH_VALUE', 'LAG',
+                   'NET.IP_NET_MASK',
                    'DENSE_RANK', 'CUME_DIST',
-                   'GREATEST', 'LOG10',
-                   'COS', 'ASINH',
-                   'FLOOR'],
+                   'SESSION_USER',
+                   'CORR', 'STDDEV',
+                   'CHARACTER_LENGTH', 'TO_BASE64',
+                   'TIME_DIFF',
+                   'TIMESTAMP_DIFF',
+                   'GENERATE_UUID',
+                   'CASE', 'CASE WHEN', 'COALESCE', 'NULLIF'],
     'Type' => ['INT64', 'FLOAT64', 'NUMERIC', 'BOOL', 'STRING', 'BYTES',
                'DATE', 'DATETIME', 'TIME', 'TIMESTAMP',
                'ARRAY', 'STRUCT'],
     'Operator' => ['+', '~', '^', '<=', '!=', '<>', '.', '[]',
                    'BETWEEN', 'NOT LIKE', 'AND', 'OR', 'NOT'],
+    'Section' => ['GCM']
   }.each { |type, names|
     names.each { |name|
       assert_exists.(name: name, type: type)
