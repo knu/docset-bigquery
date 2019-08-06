@@ -251,7 +251,7 @@ task :build => [DL_DIR, ICON_FILE] do |t|
       end
 
       case basename = File.basename(path)
-      when 'enabling-standard-sql.html'
+      when 'index.html'
         doc.css('h2[id]').each { |h|
           id = h['id']
           title = h.xpath('normalize-space(.)')
