@@ -342,6 +342,11 @@ task :build => [DL_DIR, ICON_FILE] do |t|
           end
           index_item.(path, h, 'Section', title)
         }
+      when 'aead-encryption-concepts.html'
+        doc.css('h2[id], h3[id], h4[id], h5[id], h6[id]').each { |h|
+          title = h.xpath('normalize-space(.)')
+          index_item.(path, h, 'Section', title)
+        }
       else
         doc.css('h2[id], h3[id], h4[id], h5[id], h6[id]').each { |h|
           case title = h.xpath('normalize-space(.)')
