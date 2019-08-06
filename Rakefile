@@ -309,7 +309,8 @@ task :build => [DL_DIR, ICON_FILE] do |t|
 
         doc.css('h2[id], h3[id], h4[id], h5[id], h6[id]').each { |h|
           case title = h.xpath('normalize-space(.)')
-          when /\A(?<func>[A-Z][A-Z0-9]*(?:[_.][A-Z0-9]+)*)( and \g<func>)*(?: operators?)?\z/
+          when /\A(?<func>[A-Z][A-Z0-9]*(?:[_.][A-Z0-9]+)*)( (?:and|or) \g<func>)*(?: operators?)?\z/
+            # 'or' is for 'JSON_EXTRACT or JSON_EXTRACT_SCALAR'
             type = h.name == 'h6' ? 'Query' : 'Function'
             title.scan(/[A-Z][A-Z0-9]*(?:[_.][A-Z0-9]+)*/) { |name|
               index_item.(path, h, type, name)
