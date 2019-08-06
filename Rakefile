@@ -366,7 +366,7 @@ task :build => [DL_DIR, ICON_FILE] do |t|
             }
           when 'Syntax'
             next
-          when /\A(?<ws>(?<w>[A-Z]+)(?: \g<w>)*) (?<t>statement|keyword|clause)(?: and \g<ws> \k<t>)?\z/
+          when /\A(?<ws>(?<w>[A-Z]+)(?: \g<w>)*) (?<t>statement|keyword|[cC]lause)(?: and \g<ws> \k<t>)?\z/
             type = $~[:t] == 'statement' ? 'Statement' : 'Query'
             title.scan(/(?<ws>\G(?<w>[A-Z]+)(?: \g<w>)*)/) { |ws,|
               index_item.(path, h, type, ws)
