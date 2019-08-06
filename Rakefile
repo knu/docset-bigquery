@@ -376,7 +376,8 @@ task :build => [DL_DIR, ICON_FILE] do |t|
               case title
               when /\ASELECT\b/
                 'Statement'
-              when /\bJOIN\z/, 'UNION', 'INTERSECT', 'EXCEPT', 'FOR SYSTEM_TIME AS OF'
+              when /\bJOIN\z/, 'UNION', 'INTERSECT', 'EXCEPT', 'FOR SYSTEM_TIME AS OF',
+                  'ROWS', 'RANGE'
                 'Query'
               when 'UNNEST'
                 'Function'
@@ -416,7 +417,11 @@ task :build => [DL_DIR, ICON_FILE] do |t|
   {
     'Directive' => %w[#legacySQL #standardSQL],
     'Statement' => ['SELECT', 'INSERT', 'INSERT SELECT', 'UPDATE', 'DELETE'],
-    'Query' => ['JOIN', 'INNER JOIN', 'UNION', 'INTERSECT', 'EXCEPT', 'FOR SYSTEM_TIME AS OF', 'GROUP BY', 'LIMIT'],
+    'Query' => ['JOIN', 'INNER JOIN',
+                'UNION', 'INTERSECT', 'EXCEPT',
+                'FOR SYSTEM_TIME AS OF',
+                'GROUP BY', 'LIMIT',
+                'ROWS'],
     'Function' => ['CAST', 'SAFE_CAST', 'UNNEST',
                    'CASE', 'CASE WHEN', 'COALESCE', 'NULLIF',
                    'DENSE_RANK', 'CUME_DIST',
