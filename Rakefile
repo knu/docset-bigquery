@@ -112,7 +112,7 @@ namespace :fetch do
   task :docs do
     puts 'Downloading %s' % DOCS_URI
     sh 'wget', '-nv', '--append-output', FETCH_LOG, '-r', '--no-parent', '-N', '-p',
-       '--reject-regex=\?hl=|/standard-sql/[^./?]+$|://cloud\.google\.com/images/(artwork|backgrounds|home|icons|logos)/|\.md$',
+       '--reject-regex=\?hl=|://cloud\.google\.com/images/(artwork|backgrounds|home|icons|logos)/|\.md$',
        DOCS_URI.to_s
 
     # Google responds with gzip'd asset files despite wget's sending
@@ -126,6 +126,16 @@ namespace :fetch do
       else
         puts "Uncompressing #{path}"
         File.write(path, data)
+      end
+
+      if !path.end_with?('.html') &&
+          File.open(path) { |f| f.read(255).include?('<!DOCTYPE html>') }
+        path_with_suffix = path + '.html'
+        if File.file?(path_with_suffix)
+          rm path
+        else
+          mv path, path_with_suffix
+        end
       end
     }
   end
