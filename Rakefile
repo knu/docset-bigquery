@@ -349,6 +349,8 @@ task :build => [DL_DIR, ICON_FILE] do |t|
         }
       else
         doc.css('h2[id], h3[id], h4[id], h5[id], h6[id]').each { |h|
+          next if h.at_xpath('./ancestor::*[contains(@class, "ds-selector-tabs")]')
+
           case title = h.xpath('normalize-space(.)')
           when 'SQL Syntax'
             if basename == 'query-syntax.html'
