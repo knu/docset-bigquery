@@ -343,6 +343,15 @@ task :build => [DL_DIR, ICON_FILE] do |t|
           end
           index_item.(path, h, 'Section', title)
         }
+      when 'scripting.html'
+        doc.css('h2[id], h3[id]').each { |h|
+          case title = h.xpath('normalize-space(.)')
+          when /\A[A-Z]{2,}\b/
+            index_item.(path, h, 'Statement', title)
+          else
+            index_item.(path, h, 'Section', title)
+          end
+        }
       when 'aead-encryption-concepts.html'
         doc.css('h2[id], h3[id], h4[id], h5[id], h6[id]').each { |h|
           title = h.xpath('normalize-space(.)')
@@ -417,7 +426,8 @@ task :build => [DL_DIR, ICON_FILE] do |t|
 
   {
     'Directive' => %w[#legacySQL #standardSQL],
-    'Statement' => ['SELECT', 'INSERT', 'INSERT SELECT', 'UPDATE', 'DELETE'],
+    'Statement' => ['SELECT', 'INSERT', 'INSERT SELECT', 'UPDATE', 'DELETE',
+                    'DECLARE', 'IF', 'WHILE'],
     'Query' => ['JOIN', 'INNER JOIN',
                 'UNION', 'INTERSECT', 'EXCEPT',
                 'FOR SYSTEM_TIME AS OF',
@@ -452,7 +462,7 @@ task :build => [DL_DIR, ICON_FILE] do |t|
                'ARRAY', 'STRUCT'],
     'Operator' => ['+', '~', '^', '<=', '!=', '<>', '.', '[]',
                    'BETWEEN', 'NOT LIKE', 'AND', 'OR', 'NOT'],
-    'Section' => ['GCM']
+    'Section' => ['GCM', 'Loops']
   }.each { |type, names|
     names.each { |name|
       assert_exists.(name: name, type: type)
