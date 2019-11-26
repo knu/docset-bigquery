@@ -366,7 +366,7 @@ task :build => [DL_DIR, ICON_FILE] do |t|
             if basename == 'query-syntax.html'
               index_item.(path, h, 'Statement', 'SELECT')
             end
-          when 'General UDF Syntax'
+          when 'UDF Syntax'
             statement_node, *query_nodes = h.xpath('./following-sibling::ul[1]/li/strong')
             expand(statement_node.text) { |statement|
               index_item.(path, statement_node, 'Statement', statement)
@@ -384,7 +384,7 @@ task :build => [DL_DIR, ICON_FILE] do |t|
           when /\A(?:(?<w>(?:[A-Z]+_)*[A-Z]+) )*(?<ow>\[\g<w>\] )?\g<w>\z/
             type =
               case title
-              when /\ASELECT\b/
+              when /\A(?:(?:SELECT|CREATE)\b|(?:)\z)/
                 'Statement'
               when /\bJOIN\z/, 'UNION', 'INTERSECT', 'EXCEPT', 'FOR SYSTEM_TIME AS OF',
                   'ROWS', 'RANGE'
@@ -427,7 +427,7 @@ task :build => [DL_DIR, ICON_FILE] do |t|
   {
     'Directive' => %w[#legacySQL #standardSQL],
     'Statement' => ['SELECT', 'INSERT', 'INSERT SELECT', 'UPDATE', 'DELETE',
-                    'DECLARE', 'IF', 'WHILE'],
+                    'CREATE PROCEDURE', 'DECLARE', 'IF', 'WHILE'],
     'Query' => ['JOIN', 'INNER JOIN',
                 'UNION', 'INTERSECT', 'EXCEPT',
                 'FOR SYSTEM_TIME AS OF',
@@ -462,7 +462,7 @@ task :build => [DL_DIR, ICON_FILE] do |t|
                'ARRAY', 'STRUCT'],
     'Operator' => ['+', '~', '^', '<=', '!=', '<>', '.', '[]',
                    'BETWEEN', 'NOT LIKE', 'AND', 'OR', 'NOT'],
-    'Section' => ['GCM', 'Loops']
+    'Section' => ['GCM', 'Loops', 'UDF Syntax']
   }.each { |type, names|
     names.each { |name|
       assert_exists.(name: name, type: type)
