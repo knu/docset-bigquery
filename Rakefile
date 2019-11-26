@@ -259,7 +259,7 @@ task :build => [DL_DIR, ICON_FILE] do |t|
 
           case id
           when 'sql-prefix'
-            h.xpath('./following-sibling::table[1]/tbody/tr/td[1]').each { |td|
+            h.xpath('(./following-sibling::*/descendant-or-self::table)[1]/tbody/tr/td[1]').each { |td|
               directive = td.xpath('normalize-space(.)')
               index_item.(path, td, 'Directive', directive)
             }
@@ -275,7 +275,7 @@ task :build => [DL_DIR, ICON_FILE] do |t|
           end
         }
         doc.css('h2[id$="-type"]').each { |h|
-          h.xpath('./following-sibling::table[1]/tbody/tr/td[1]').each { |td|
+          h.xpath('(./following-sibling::*/descendant-or-self::table)[1]/tbody/tr/td[1]').each { |td|
             type = td.xpath('normalize-space(.)')
             index_item.(path, td, 'Type', type)
           }
@@ -317,7 +317,7 @@ task :build => [DL_DIR, ICON_FILE] do |t|
             }
             next
           when /\A(Arithmetic|Bitwise|Logical|Comparison) operators\z/
-            h.xpath('./following-sibling::table[1]/tbody/tr/td[2]/text()').each { |text|
+            h.xpath('(./following-sibling::*/descendant-or-self::table)[1]/tbody/tr/td[2]/text()').each { |text|
               syntax = text.xpath('normalize-space(.)')
               next unless /\bX\b/ === syntax
               op, rop, = syntax.gsub!(/\b[XYZ]\b/, '').split
@@ -330,7 +330,7 @@ task :build => [DL_DIR, ICON_FILE] do |t|
               end
             }
           when 'Element access operators'
-            h.xpath('./following-sibling::table[1]/tbody/tr/td[1]/text()').each { |text|
+            h.xpath('(./following-sibling::*/descendant-or-self::table)[1]/tbody/tr/td[1]/text()').each { |text|
               syntax = text.xpath('normalize-space(.)').delete(' ')  # "[ ]" -> "[]"
               index_item.(path, h, 'Operator', syntax)
             }
