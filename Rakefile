@@ -81,8 +81,11 @@ def extract_version
   cd DOCS_ROOT do
     Dir.glob("#{HOST_URI.route_to(DOCS_URI)}*.html") { |path|
       doc = Nokogiri::HTML(File.read(path), path)
-      if date_published = doc.at('//p[@itemprop="datePublished"]/@content')
-        version = [version, Time.parse(date_published.value).strftime('%Y.%m.%d')].max
+      if date_published = doc.at('//*[@itemprop="datePublished"]/@content')&.value ||
+          doc.at('//devsite-content-footer//p[starts-with(., "Last updated ")]/text()')&.then { |t|
+            t.to_s[/\b\d{4}-\d{2}-\d{2}\b/]
+          }
+        version = [version, Time.parse(date_published).strftime('%Y.%m.%d')].max
       end
     }
   end
@@ -214,6 +217,10 @@ task :build => [DL_DIR, ICON_FILE] do |t|
       uri = HOST_URI + path
       doc = Nokogiri::HTML(File.read(path), path)
 
+      if /\b(\d{4}-\d{2}-\d{2})\b/ === doc.at('//devsite-content-footer//p[starts-with(., "Last updated ")]/text()')&.to_s
+        last_updated = $1
+      end
+
       doc.xpath('//meta[not(@charset or @name = "viewport")] | //script | //link[not(@rel="stylesheet")]').each(&:remove)
 
       URI_ATTRS.each { |tag, attr|
@@ -247,6 +254,13 @@ task :build => [DL_DIR, ICON_FILE] do |t|
         link['rel'] = 'stylesheet'
         link['href'] = uri.route_to(COMMON_CSS_URL)
       }
+
+      if last_updated
+        doc.at('body') << Nokogiri::XML::Node.new('span', doc).tap { |span|
+          span['itemprop'] = 'datePublished'
+          span['content'] = "#{last_updated}T00:00:00Z"
+        }
+      end
 
       if h1 = doc.at('h1')
         index_item.(path, h1, 'Section', h1.xpath('normalize-space(.)'))
