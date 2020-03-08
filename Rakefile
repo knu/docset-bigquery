@@ -129,7 +129,7 @@ namespace :fetch do
       end
 
       if !path.end_with?('.html') &&
-          File.open(path) { |f| f.read(255).include?('<!DOCTYPE html>') }
+          File.open(path) { |f| f.read(255).match?(/<!DOCTYPE html>/i) }
         path_with_suffix = path + '.html'
         if File.file?(path_with_suffix)
           rm path
