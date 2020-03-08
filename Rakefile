@@ -92,7 +92,7 @@ end
 
 def previous_version
   current_version = Gem::Version.new(extract_version)
-  previous_version = Pathname.glob("versions/*/#{DOCSET}").map { |path|
+  Pathname.glob("versions/*/#{DOCSET}").map { |path|
     Gem::Version.new(path.parent.basename.to_s)
   }.select { |version|
     version < current_version
@@ -193,12 +193,14 @@ task :build => [DL_DIR, ICON_FILE] do |t|
   SQL
 
   index_item = ->(path, node, type, name) {
-    a = Nokogiri::XML::Node.new('a', node.document)
-    a['name'] = id = '//apple_ref/cpp/%s/%s' % [type, name].map { |s|
-      URI.encode_www_form_component(s).gsub('+', '%20')
-    }
-    a['class'] = 'dashAnchor'
-    node.prepend_child(a)
+    node.prepend_child(
+      Nokogiri::XML::Node.new('a', node.document).tap { |a|
+        a['name'] = id = '//apple_ref/cpp/%s/%s' % [type, name].map { |s|
+          URI.encode_www_form_component(s).gsub('+', '%20')
+        }
+        a['class'] = 'dashAnchor'
+      }
+    )
     url = "#{path}\##{id}"
     insert.execute(name, type, url)
   }
@@ -241,10 +243,10 @@ task :build => [DL_DIR, ICON_FILE] do |t|
         doc.at('body').inner_html = article.inner_html
       end
 
-      link = Nokogiri::XML::Node.new('link', doc)
-      link['rel'] = 'stylesheet'
-      link['href'] = uri.route_to(COMMON_CSS_URL)
-      doc.at('head') << link
+      doc.at('head') << Nokogiri::XML::Node.new('link', doc).tap { |link|
+        link['rel'] = 'stylesheet'
+        link['href'] = uri.route_to(COMMON_CSS_URL)
+      }
 
       if h1 = doc.at('h1')
         index_item.(path, h1, 'Section', h1.xpath('normalize-space(.)'))
