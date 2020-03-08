@@ -334,7 +334,9 @@ task :build => [DL_DIR, ICON_FILE] do |t|
               syntax = text.xpath('normalize-space(.)').delete(' ')  # "[ ]" -> "[]"
               index_item.(path, h, 'Operator', syntax)
             }
-          when / operators\z/
+          when 'Concatenation operator'
+            index_item.(path, h, 'Operator', '||')
+          when / operators?\z/
             raise "#{path}: Unknown section: #{title}"
           when 'Casting'
             index_item.(path, h, 'Function', 'CAST')
@@ -460,7 +462,7 @@ task :build => [DL_DIR, ICON_FILE] do |t|
     'Type' => ['INT64', 'FLOAT64', 'NUMERIC', 'BOOL', 'STRING', 'BYTES',
                'DATE', 'DATETIME', 'TIME', 'TIMESTAMP',
                'ARRAY', 'STRUCT'],
-    'Operator' => ['+', '~', '^', '<=', '!=', '<>', '.', '[]',
+    'Operator' => ['+', '~', '^', '<=', '!=', '<>', '.', '[]', '||',
                    'BETWEEN', 'NOT LIKE', 'AND', 'OR', 'NOT'],
     'Section' => ['GCM', 'Loops', 'UDF Syntax']
   }.each { |type, names|
