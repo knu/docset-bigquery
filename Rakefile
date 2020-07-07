@@ -395,6 +395,11 @@ task :build => [DL_DIR, ICON_FILE] do |t|
             }
           when 'Syntax'
             next
+          when 'Defining the window frame clause'
+            code, = h.xpath('./following-sibling::pre[1]/code')
+            code.text.scan(/[A-Z]+(?: [A-Z]+)*/) { |query|
+              index_item.(path, code, 'Query', query) unless query == 'AND'
+            }
           when /\A(?<ws>(?<w>[A-Z]+)(?: \g<w>)*) (?<t>statement|keyword|[cC]lause)(?: and \g<ws> \k<t>)?\z/
             type = $~[:t] == 'statement' ? 'Statement' : 'Query'
             title.scan(/(?<ws>\G(?<w>[A-Z]+)(?: \g<w>)*)/) { |ws,|
@@ -451,7 +456,9 @@ task :build => [DL_DIR, ICON_FILE] do |t|
                 'UNION', 'INTERSECT', 'EXCEPT',
                 'FOR SYSTEM_TIME AS OF',
                 'GROUP BY', 'LIMIT',
-                'ROWS'],
+                'ROWS', 'RANGE', 'BETWEEN',
+                'UNBOUNDED FOLLOWING', 'FOLLOWING',
+                'CURRENT ROW'],
     'Function' => ['CAST', 'SAFE_CAST', 'UNNEST',
                    'AEAD.ENCRYPT', 'KEYS.NEW_KEYSET',
                    'ARRAY_AGG', 'COUNTIF', 'LOGICAL_AND', 'MAX',
