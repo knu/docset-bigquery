@@ -326,7 +326,7 @@ task :build => [DL_DIR, ICON_FILE] do |t|
 
         doc.css('h2[id], h3[id], h4[id], h5[id], h6[id]').each { |h|
           case title = h.xpath('normalize-space(.)')
-          when /\A(?<func>[A-Z][A-Z0-9]*(?:[_.][A-Z0-9]+)*)( (?:and|or) \g<func>)*(?: operators?)?\z/
+          when /\A(?<func>[A-Z][A-Z0-9]*(?:[_.][A-Z0-9]+)*)( (?:and|or) \g<func>)*(?: (?:operators?|expr))?\z/
             # 'or' is for 'JSON_EXTRACT or JSON_EXTRACT_SCALAR'
             type = h.name == 'h6' ? 'Query' : 'Function'
             title.scan(/[A-Z][A-Z0-9]*(?:[_.][A-Z0-9]+)*/) { |name|
@@ -475,7 +475,7 @@ task :build => [DL_DIR, ICON_FILE] do |t|
                    'TIME_DIFF',
                    'TIMESTAMP_DIFF',
                    'GENERATE_UUID',
-                   'CASE', 'CASE WHEN', 'COALESCE', 'NULLIF'],
+                   'CASE', 'COALESCE', 'NULLIF'],
     'Type' => ['INT64', 'FLOAT64', 'NUMERIC', 'BOOL', 'STRING', 'BYTES',
                'DATE', 'DATETIME', 'TIME', 'TIMESTAMP',
                'ARRAY', 'STRUCT'],
