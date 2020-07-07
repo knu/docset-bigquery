@@ -196,11 +196,12 @@ task :build => [DL_DIR, ICON_FILE] do |t|
   SQL
 
   index_item = ->(path, node, type, name) {
+    id = '//apple_ref/cpp/%s/%s' % [type, name].map { |s|
+      URI.encode_www_form_component(s).gsub('+', '%20')
+    }
     node.prepend_child(
       Nokogiri::XML::Node.new('a', node.document).tap { |a|
-        a['name'] = id = '//apple_ref/cpp/%s/%s' % [type, name].map { |s|
-          URI.encode_www_form_component(s).gsub('+', '%20')
-        }
+        a['name'] = id
         a['class'] = 'dashAnchor'
       }
     )
