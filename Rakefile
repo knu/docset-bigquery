@@ -300,8 +300,8 @@ task :build => [DL_DIR, ICON_FILE] do |t|
         doc.xpath('//table/thead/tr[1]/th[position() = 1 and text() = "Name"]').each { |th|
           th.xpath('./ancestor::table[1]/tbody/tr/td[1]').each { |td|
             case text = td.xpath('normalize-space(.)')
-            when /\A[A-Z][A-Z0-9]*\z/
-              index_item.(path, td, 'Type', text)
+            when /\A([A-Z][A-Z0-9]*)(?: \(Preview\))?\z/
+              index_item.(path, td, 'Type', $1)
             else
               raise "#{path}: Unknown type: #{text}"
             end
@@ -487,7 +487,7 @@ task :build => [DL_DIR, ICON_FILE] do |t|
                    'CASE', 'COALESCE', 'NULLIF'],
     'Type' => ['INT64', 'FLOAT64', 'NUMERIC', 'BOOL', 'STRING', 'BYTES',
                'DATE', 'DATETIME', 'TIME', 'TIMESTAMP',
-               'ARRAY', 'STRUCT'],
+               'ARRAY', 'STRUCT', 'BIGNUMERIC'],
     'Operator' => ['+', '~', '^', '<=', '!=', '<>', '.', '[]', '||',
                    'BETWEEN', 'NOT LIKE', 'AND', 'OR', 'NOT'],
     'Section' => ['GCM', 'Loops', 'UDF Syntax']
