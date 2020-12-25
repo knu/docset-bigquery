@@ -394,11 +394,11 @@ task :build => [DL_DIR, ICON_FILE] do |t|
           next if h.at_xpath('./ancestor::*[contains(@class, "ds-selector-tabs")]')
 
           case title = h.xpath('normalize-space(.)')
-          when 'SQL Syntax'
+          when 'SQL syntax'
             if basename == 'query-syntax.html'
               index_item.(path, h, 'Statement', 'SELECT')
             end
-          when 'UDF Syntax'
+          when 'UDF syntax'
             statement_node, *query_nodes = h.xpath('./following-sibling::ul[1]/li/p/strong')
             expand(statement_node.text) { |statement|
               index_item.(path, statement_node, 'Statement', statement)
@@ -501,7 +501,7 @@ task :build => [DL_DIR, ICON_FILE] do |t|
                'ARRAY', 'STRUCT', 'BIGNUMERIC'],
     'Operator' => ['+', '~', '^', '<=', '!=', '<>', '.', '[]', '||',
                    'BETWEEN', 'NOT LIKE', 'AND', 'OR', 'NOT'],
-    'Section' => ['GCM', 'Loops', 'UDF Syntax']
+    'Section' => ['GCM', 'Loops', 'UDF syntax']
   }.each { |type, names|
     names.each { |name|
       assert_exists.(name: name, type: type)
