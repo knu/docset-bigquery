@@ -486,7 +486,8 @@ task :build => [DL_DIR, ICON_FILE] do |t|
   {
     'Directive' => %w[#legacySQL #standardSQL],
     'Statement' => ['SELECT', 'INSERT', 'INSERT SELECT', 'UPDATE', 'DELETE',
-                    'CREATE PROCEDURE', 'DECLARE', 'IF', 'WHILE', 'ASSERT'],
+                    'CREATE PROCEDURE', 'DECLARE', 'IF', 'WHILE', 'ASSERT',
+                    'CREATE EXTERNAL TABLE', 'EXPORT DATA'],
     'Query' => ['JOIN', 'INNER JOIN',
                 'UNION', 'INTERSECT', 'EXCEPT',
                 'FOR SYSTEM_TIME AS OF',
