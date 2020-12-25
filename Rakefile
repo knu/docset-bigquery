@@ -389,6 +389,15 @@ task :build => [DL_DIR, ICON_FILE] do |t|
           title = h.xpath('normalize-space(.)')
           index_item.(path, h, 'Section', title)
         }
+      when 'subqueries.html'
+        doc.css('h2[id], h3[id]').each { |h|
+          case title = h.xpath('normalize-space(.)')
+          when /\A([A-Z]{2,}) subqueries\b/
+            index_item.(path, h, 'Query', $1)
+          else
+            index_item.(path, h, 'Section', title)
+          end
+        }
       else
         doc.css('h2[id], h3[id], h4[id], h5[id], h6[id]').each { |h|
           next if h.at_xpath('./ancestor::*[contains(@class, "ds-selector-tabs")]')
@@ -416,6 +425,19 @@ task :build => [DL_DIR, ICON_FILE] do |t|
           when /\A(?<ws>(?<w>[A-Z]+)(?: \g<w>)*) (?<t>statement|keyword|[cC]lause)(?: and \g<ws> \k<t>)?\z/
             type = $~[:t] == 'statement' ? 'Statement' : 'Query'
             title.scan(/(?<ws>\G(?<w>[A-Z]+)(?: \g<w>)*)/) { |ws,|
+              index_item.(path, h, type, ws)
+            }
+          when %r{
+            \A
+            (?# at least one capital word block )
+            (?= .* (?<ws> (?<w>[A-Z]+)(?: \g<w>)*) )
+            (?# at least one type name )
+            (?= .* (?<type> (?<t>[sS]tatement)s? | (?<t>[kK]eyword)s? | (?<t>[cC]lause)s? ) )
+            (?<token> \g<ws> | and | \g<type> ) (?: [ ] \g<token> )*
+            \z
+          }x
+            type = $~[:t] == 'statement' ? 'Statement' : 'Query'
+            title.scan(/(?<ws>(?<w>[A-Z]+)(?: \g<w>)*)/) { |ws,|
               index_item.(path, h, type, ws)
             }
           when /\A(?:(?<w>(?:[A-Z]+_)*[A-Z]+) )*(?<ow>\[\g<w>\] )?\g<w>\z/
@@ -468,7 +490,8 @@ task :build => [DL_DIR, ICON_FILE] do |t|
     'Query' => ['JOIN', 'INNER JOIN',
                 'UNION', 'INTERSECT', 'EXCEPT',
                 'FOR SYSTEM_TIME AS OF',
-                'GROUP BY', 'LIMIT',
+                'GROUP BY', 'LIMIT', 'OFFSET',
+                'ARRAY', 'IN', 'EXISTS',
                 'ROWS', 'RANGE', 'BETWEEN',
                 'UNBOUNDED FOLLOWING', 'FOLLOWING',
                 'CURRENT ROW'],
