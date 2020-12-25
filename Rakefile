@@ -351,6 +351,8 @@ task :build => [DL_DIR, ICON_FILE] do |t|
               syntax = text.xpath('normalize-space(.)').delete(' ')  # "[ ]" -> "[]"
               index_item.(path, h, 'Operator', syntax)
             }
+          when 'Date arithmetics operators'
+            # Nothing to link
           when 'Concatenation operator'
             index_item.(path, h, 'Operator', '||')
           when / operators?\z/
