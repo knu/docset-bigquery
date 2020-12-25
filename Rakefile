@@ -333,6 +333,17 @@ task :build => [DL_DIR, ICON_FILE] do |t|
               index_item.(path, h, type, name)
             }
             next
+          when 'Logical operators'
+            h.xpath('(./following-sibling::p)[1]/code').each { |code|
+              case text = code.text
+              when 'TRUE', 'FALSE', 'NULL'
+                # skip
+              when 'AND', 'OR', 'NOT'
+                index_item.(path, h, 'Operator', text)
+              else
+                raise "#{path}: Unknown loginal operator: #{text}"
+              end
+            }
           when /\A(Arithmetic|Bitwise|Logical|Comparison) operators\z/
             h.xpath('(./following-sibling::*/descendant-or-self::table)[1]/tbody/tr/td[2]/text()').each { |text|
               syntax = text.xpath('normalize-space(.)')
