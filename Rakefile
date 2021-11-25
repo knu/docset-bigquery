@@ -427,8 +427,16 @@ task :build => [DL_DIR, ICON_FILE] do |t|
             code.text.scan(/[A-Z]+(?: [A-Z]+)*/) { |query|
               index_item.(path, code, 'Query', query) unless query == 'AND'
             }
-          when /\A(?<ws>(?<w>[A-Z]+)(?: \g<w>)*) (?<t>statement|keyword|[cC]lause)(?: and \g<ws> \k<t>)?\z/
-            type = $~[:t] == 'statement' ? 'Statement' : 'Query'
+          when /\A(?<ws>(?<w>[A-Z]+)(?: \g<w>)*) (?<t>statement|keyword|[cC]lause|operator)(?: and \g<ws> \k<t>)?\z/
+            type =
+              case $~[:t]
+              when 'statement'
+                'Statement'
+              when 'operator'
+                'Operator'
+              else
+                'Query'
+              end
             title.scan(/(?<ws>\G(?<w>[A-Z]+)(?: \g<w>)*)/) { |ws,|
               index_item.(path, h, type, ws)
             }
@@ -453,8 +461,6 @@ task :build => [DL_DIR, ICON_FILE] do |t|
               when /\bJOIN\z/, 'UNION', 'INTERSECT', 'EXCEPT', 'FOR SYSTEM_TIME AS OF',
                   'ROWS', 'RANGE', 'OPTIONS'
                 'Query'
-              when 'UNNEST'
-                'Function'
               else
                 raise "#{path}: Unknown directive: #{title}"
               end
@@ -502,7 +508,7 @@ task :build => [DL_DIR, ICON_FILE] do |t|
                 'UNBOUNDED FOLLOWING', 'FOLLOWING',
                 'CURRENT ROW',
                 'OPTIONS'],
-    'Function' => ['CAST', 'SAFE_CAST', 'UNNEST',
+    'Function' => ['CAST', 'SAFE_CAST',
                    'AEAD.ENCRYPT', 'KEYS.NEW_KEYSET',
                    'ARRAY_AGG', 'COUNTIF', 'LOGICAL_AND', 'MAX',
                    'APPROX_COUNT_DISTINCT',
@@ -530,7 +536,8 @@ task :build => [DL_DIR, ICON_FILE] do |t|
                'DATE', 'DATETIME', 'TIME', 'TIMESTAMP',
                'ARRAY', 'STRUCT', 'BIGNUMERIC'],
     'Operator' => ['+', '~', '^', '<=', '!=', '<>', '.', '[]', '||',
-                   'BETWEEN', 'NOT LIKE', 'AND', 'OR', 'NOT'],
+                   'BETWEEN', 'NOT LIKE', 'AND', 'OR', 'NOT',
+                   'UNNEST'],
     'Section' => ['GCM', 'Loops', 'UDF syntax']
   }.each { |type, names|
     names.each { |name|
