@@ -451,7 +451,7 @@ task :build => [DL_DIR, ICON_FILE] do |t|
               when /\A(?:(?:SELECT|CREATE|DROP|ASSERT)\b|(?:)\z)/
                 'Statement'
               when /\bJOIN\z/, 'UNION', 'INTERSECT', 'EXCEPT', 'FOR SYSTEM_TIME AS OF',
-                  'ROWS', 'RANGE'
+                  'ROWS', 'RANGE', 'OPTIONS'
                 'Query'
               when 'UNNEST'
                 'Function'
@@ -500,7 +500,8 @@ task :build => [DL_DIR, ICON_FILE] do |t|
                 'ARRAY', 'IN', 'EXISTS',
                 'ROWS', 'RANGE', 'BETWEEN',
                 'UNBOUNDED FOLLOWING', 'FOLLOWING',
-                'CURRENT ROW'],
+                'CURRENT ROW',
+                'OPTIONS'],
     'Function' => ['CAST', 'SAFE_CAST', 'UNNEST',
                    'AEAD.ENCRYPT', 'KEYS.NEW_KEYSET',
                    'ARRAY_AGG', 'COUNTIF', 'LOGICAL_AND', 'MAX',
