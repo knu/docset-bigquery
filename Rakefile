@@ -443,7 +443,7 @@ task :build => [DL_DIR, ICON_FILE] do |t|
           when /\A(?:(?<w>(?:[A-Z]+_)*[A-Z]+) )*(?<ow>\[\g<w>\] )?\g<w>\z/
             type =
               case title
-              when /\A(?:(?:SELECT|CREATE|ASSERT)\b|(?:)\z)/
+              when /\A(?:(?:SELECT|CREATE|DROP|ASSERT)\b|(?:)\z)/
                 'Statement'
               when /\bJOIN\z/, 'UNION', 'INTERSECT', 'EXCEPT', 'FOR SYSTEM_TIME AS OF',
                   'ROWS', 'RANGE'
@@ -487,7 +487,7 @@ task :build => [DL_DIR, ICON_FILE] do |t|
     'Directive' => %w[#legacySQL #standardSQL],
     'Statement' => ['SELECT', 'INSERT', 'INSERT SELECT', 'UPDATE', 'DELETE',
                     'CREATE PROCEDURE', 'DECLARE', 'IF', 'WHILE', 'ASSERT',
-                    'CREATE EXTERNAL TABLE', 'EXPORT DATA'],
+                    'CREATE EXTERNAL TABLE', 'EXPORT DATA', 'DROP TABLE FUNCTION'],
     'Query' => ['JOIN', 'INNER JOIN',
                 'UNION', 'INTERSECT', 'EXCEPT',
                 'FOR SYSTEM_TIME AS OF',
