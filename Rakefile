@@ -357,12 +357,17 @@ task :build => [DL_DIR, ICON_FILE] do |t|
                 index_item.(path, h, 'Operator', op)
               end
             }
-          when 'Element access operators'
-            h.xpath('(./following-sibling::*/descendant-or-self::table)[1]/tbody/tr/td[1]/text()').each { |text|
-              syntax = text.xpath('normalize-space(.)').delete(' ')  # "[ ]" -> "[]"
-              index_item.(path, h, 'Operator', syntax)
+          when 'Field access operator'
+            index_item.(path, h, 'Operator', '.')
+          when 'Array subscript operator'
+            index_item.(path, h, 'Operator', '[]')
+            h.xpath('./following-sibling::*//li[./code = "position_keyword"]/ul/li').each { |li|
+              case func = li.at_xpath('./code')&.text
+              when /\A[A-Z][A-Z0-9]*(?:[_.][A-Z0-9]+)*\z/
+                index_item.(path, h, 'Function', func)
+              end
             }
-          when 'Date arithmetics operators'
+          when 'Date arithmetics operators', 'Interval arithmetic operators'
             # Nothing to link
           when 'Concatenation operator'
             index_item.(path, h, 'Operator', '||')
