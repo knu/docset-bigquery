@@ -299,12 +299,14 @@ task :build => [DL_DIR, ICON_FILE] do |t|
         }
         doc.xpath('//table/thead/tr[1]/th[position() = 1 and text() = "Name"]').each { |th|
           th.xpath('./ancestor::table[1]/tbody/tr/td[1]').each { |td|
-            case text = td.xpath('normalize-space(.)')
-            when /\A([A-Z][A-Z0-9]*)(?: \(Preview\))?\z/
-              index_item.(path, td, 'Type', $1)
-            else
-              raise "#{path}: Unknown type: #{text}"
-            end
+            td.xpath('./code').each { |code|
+              case type = code.xpath('normalize-space(.)')
+              when /\A([A-Z][A-Z0-9]*)\z/
+                index_item.(path, td, 'Type', $1)
+              else
+                raise "#{path}: Unknown type: #{text}"
+              end
+            }
           }
         }
       when 'functions-and-operators.html'
@@ -532,7 +534,7 @@ task :build => [DL_DIR, ICON_FILE] do |t|
                    'TIMESTAMP_DIFF',
                    'GENERATE_UUID',
                    'CASE', 'COALESCE', 'NULLIF'],
-    'Type' => ['INT64', 'FLOAT64', 'NUMERIC', 'BOOL', 'STRING', 'BYTES',
+    'Type' => ['INT64', 'BIGINT', 'FLOAT64', 'NUMERIC', 'BOOL', 'STRING', 'BYTES',
                'DATE', 'DATETIME', 'TIME', 'TIMESTAMP',
                'ARRAY', 'STRUCT', 'BIGNUMERIC'],
     'Operator' => ['+', '~', '^', '<=', '!=', '<>', '.', '[]', '||',
