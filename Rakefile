@@ -414,14 +414,6 @@ task :build => [DL_DIR, ICON_FILE] do |t|
             if basename == 'query-syntax.html'
               index_item.(path, h, 'Statement', 'SELECT')
             end
-          when 'UDF syntax'
-            statement_node, *query_nodes = h.xpath('./following-sibling::ul[1]/li/p/strong')
-            expand(statement_node.text) { |statement|
-              index_item.(path, statement_node, 'Statement', statement)
-            }
-            query_nodes.each { |query_node|
-              index_item.(path, query_node, 'Query', query_node.text)
-            }
           when 'Syntax'
             next
           when 'Defining the window frame clause'
@@ -540,7 +532,7 @@ task :build => [DL_DIR, ICON_FILE] do |t|
     'Operator' => ['+', '~', '^', '<=', '!=', '<>', '.', '[]', '||',
                    'BETWEEN', 'NOT LIKE', 'AND', 'OR', 'NOT',
                    'UNNEST'],
-    'Section' => ['GCM', 'Loops', 'UDF syntax']
+    'Section' => ['GCM', 'Loops', 'SQL UDFs']
   }.each { |type, names|
     names.each { |name|
       assert_exists.(name: name, type: type)
