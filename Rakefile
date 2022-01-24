@@ -330,10 +330,17 @@ task :build => [DL_DIR, ICON_FILE] do |t|
 
         doc.css('h2[id], h3[id], h4[id], h5[id], h6[id]').each { |h|
           case title = h.xpath('normalize-space(.)')
-          when /\A(?<func>[A-Z][A-Z0-9]*(?:[_.][A-Z0-9]+)*)( (?:and|or) \g<func>)*(?: (?:operators?|expr))?\z/
+          when /\A(?<func>(?<WORD>[A-Z][A-Z0-9]*(?:[_.][A-Z0-9]+)*)(?: \g<WORD>)*)( (?:and|or) \g<func>)*(?: (?<thing>operators?|expr))?\z/
             # 'or' is for 'JSON_EXTRACT or JSON_EXTRACT_SCALAR'
-            type = h.name == 'h6' ? 'Query' : 'Function'
-            title.scan(/[A-Z][A-Z0-9]*(?:[_.][A-Z0-9]+)*/) { |name|
+            type =
+              case $~[:thing]
+              when /operator/
+                warn title
+                'Operator'
+              else
+                h.name == 'h6' ? 'Query' : 'Function'
+              end
+            title.scan(/(?<func>(?<WORD>[A-Z][A-Z0-9]*(?:[_.][A-Z0-9]+)*)(?: \g<WORD>)*)/) { |name,|
               index_item.(path, h, type, name)
             }
             next
@@ -535,7 +542,7 @@ task :build => [DL_DIR, ICON_FILE] do |t|
                'ARRAY', 'STRUCT', 'BIGNUMERIC'],
     'Operator' => ['+', '~', '^', '<=', '!=', '<>', '.', '[]', '||',
                    'BETWEEN', 'NOT LIKE', 'AND', 'OR', 'NOT',
-                   'UNNEST'],
+                   'IN', 'IS', 'IS DISTINCT FROM', 'UNNEST'],
     'Section' => ['GCM', 'Loops', 'SQL UDFs', 'JSON subscript operator']
   }.each { |type, names|
     names.each { |name|
