@@ -371,6 +371,8 @@ task :build => [DL_DIR, ICON_FILE] do |t|
                 index_item.(path, h, 'Function', func)
               end
             }
+          when 'JSON subscript operator'
+            index_item.(path, h, 'Operator', '[]')
           when 'Date arithmetics operators', 'Interval arithmetic operators'
             # Nothing to link
           when 'Concatenation operator'
@@ -534,7 +536,7 @@ task :build => [DL_DIR, ICON_FILE] do |t|
     'Operator' => ['+', '~', '^', '<=', '!=', '<>', '.', '[]', '||',
                    'BETWEEN', 'NOT LIKE', 'AND', 'OR', 'NOT',
                    'UNNEST'],
-    'Section' => ['GCM', 'Loops', 'SQL UDFs']
+    'Section' => ['GCM', 'Loops', 'SQL UDFs', 'JSON subscript operator']
   }.each { |type, names|
     names.each { |name|
       assert_exists.(name: name, type: type)
