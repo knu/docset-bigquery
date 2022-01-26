@@ -335,7 +335,6 @@ task :build => [DL_DIR, ICON_FILE] do |t|
             type =
               case $~[:thing]
               when /operator/
-                warn title
                 'Operator'
               else
                 h.name == 'h6' ? 'Query' : 'Function'
