@@ -272,18 +272,15 @@ task :build => [DL_DIR, ICON_FILE] do |t|
       case basename = File.basename(path)
       when 'index.html'
         doc.css('h2[id]').each { |h|
-          id = h['id']
           title = h.xpath('normalize-space(.)')
           index_item.(path, h, 'Section', title)
-
-          case id
-          when 'sql-prefix'
-            h.xpath('(./following-sibling::*/descendant-or-self::table)[1]/tbody/tr/td[1]').each { |td|
-              directive = td.xpath('normalize-space(.)')
-              index_item.(path, td, 'Directive', directive)
-            }
-          end
         }
+        if h = doc.at('h3#sql')
+          h.xpath('./following-sibling::p[1]/descendant-or-self::code[starts-with(., "#")]').each { |td|
+            directive = td.xpath('normalize-space(.)')
+            index_item.(path, td, 'Directive', directive)
+          }
+        end
       when 'data-types.html'
         doc.css('h2[id], h3[id], h4[id], h5[id], h6[id]').each { |h|
           case title = h.xpath('normalize-space(.)')
