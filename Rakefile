@@ -389,7 +389,7 @@ task :build => [DL_DIR, ICON_FILE] do |t|
           end
           index_item.(path, h, 'Section', title)
         }
-      when 'scripting.html'
+      when 'procedural-language.html'
         doc.css('h2[id], h3[id]').each { |h|
           case title = h.xpath('normalize-space(.)')
           when /\A[A-Z]{2,}\b/
