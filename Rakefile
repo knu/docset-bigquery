@@ -94,12 +94,13 @@ def extract_version
 end
 
 def previous_version
-  current_version = Gem::Version.new(extract_version)
-  Pathname.glob("versions/*/#{DOCSET}").map { |path|
-    Gem::Version.new(path.parent.basename.to_s)
-  }.select { |version|
-    version < current_version
-  }.max&.to_s
+  ENV['PREVIOUS_VERSION'] || Gem::Version.new(current_version).then { |current_version|
+    Pathname.glob("versions/*/#{DOCSET}").map { |path|
+      Gem::Version.new(path.parent.basename.to_s)
+    }.select { |version|
+      version < current_version
+    }.max&.to_s
+  }
 end
 
 def previous_docset
@@ -666,6 +667,8 @@ task :push => DUC_WORKDIR do
   mkdir_p versioned_archive.dirname
   cp archive, versioned_archive
 
+  specific_versions = nil
+
   puts "Updating #{docset_json}"
   File.open(docset_json, 'r+') { |f|
     json = JSON.parse(f.read)
@@ -674,7 +677,7 @@ task :push => DUC_WORKDIR do
       'version' => version,
       'archive' => versioned_archive.relative_path_from(workdir).to_s
     }
-    json['specific_versions'] = [specific_version] | json['specific_versions']
+    specific_versions = json['specific_versions'] = [specific_version] | json['specific_versions']
     f.rewind
     f.puts JSON.pretty_generate(json, indent: "    ")
     f.truncate(f.tell)
@@ -690,6 +693,10 @@ task :push => DUC_WORKDIR do
         }
         sh 'git', 'commit', '-m', "Update #{DOCSET_NAME} docset to #{version}"
         sh 'git', 'push', '-fu', 'origin', "#{DUC_BRANCH}:#{DUC_BRANCH}"
+
+        last_version = specific_versions.dig(1, 'version')
+        puts "Diff to the latest version #{last_version}:"
+        system({ 'PREVIOUS_VERSION' => last_version }, "rake diff")
 
         puts "New docset is committed and pushed to #{DUC_OWNER}:#{DUC_BRANCH}.  To send a PR, go to the following URL:"
         puts "\t" + "#{DUC_REPO_UPSTREAM.delete_suffix(".git")}/compare/master...#{DUC_OWNER}:#{DUC_BRANCH}?expand=1"
