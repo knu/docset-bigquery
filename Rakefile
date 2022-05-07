@@ -108,6 +108,24 @@ def previous_docset
   "versions/#{version}/#{DOCSET}"
 end
 
+def built_docset
+  if version = ENV['BUILD_VERSION']
+    "versions/#{version}/#{DOCSET}"
+  else
+    DOCSET
+  end
+end
+
+def dump_index(docset, out)
+  index = File.join(docset, INDEX_RELPATH)
+
+  SQLite3::Database.new(index) do |db|
+    db.execute("SELECT name, type, path FROM searchIndex ORDER BY name, type, path") do |row|
+      out.puts row.join("\t")
+    end
+  end
+end
+
 desc "Fetch the #{DOCSET_NAME} document files."
 task :fetch => %i[fetch:icon fetch:docs]
 
@@ -143,7 +161,7 @@ namespace :fetch do
     }
   end
 
-  task :icon do 
+  task :icon do
     Tempfile.create(['icon', '.png']) { |temp|
       agent = Mechanize.new
       page = agent.get(ICON_SITE_URI)
@@ -556,43 +574,46 @@ task :build => [DL_DIR, ICON_FILE] do |t|
   Rake::Task[:diff].invoke
 end
 
+task :dump do
+  if $stdout.tty?
+    system "rake dump:index | #{ENV['PAGER'] || 'more'}"
+  else
+    system "rake dump:index"
+  end
+end
+
+namespace :dump do
+  desc 'Dump the index.'
+  task :index do
+    Tempfile.create(['', '.txt']) do |txt|
+      dump_index(built_docset, txt)
+
+      txt.rewind
+      print txt.read
+    end
+  end
+end
+
 task :diff do
-  system "rake diff:index diff:docs | #{ENV['PAGER'] || 'more'}"
+  if $stdout.tty?
+    system "rake diff:index diff:docs | #{ENV['PAGER'] || 'more'}"
+  else
+    system "rake diff:index diff:docs"
+  end
 end
 
 namespace :diff do
   desc 'Show the differences in the index from an installed version.'
   task :index do
-    old_index = File.join(previous_docset, INDEX_RELPATH)
+    Tempfile.create(['old', '.txt']) do |otxt|
+      Tempfile.create(['new', '.txt']) do |ntxt|
+        dump_index(previous_docset, otxt)
+        dump_index(built_docset, ntxt)
 
-    begin
-      sql = "SELECT name, type, path FROM searchIndex ORDER BY name, type, path"
-
-      odb = SQLite3::Database.new(old_index)
-      ndb = SQLite3::Database.new(DOCS_INDEX)
-
-      Tempfile.create(['old', '.txt']) { |otxt|
-        odb.execute(sql) { |row|
-          otxt.puts row.join("\t")
-        }
-        odb.close
-        otxt.close
-
-        Tempfile.create(['new', '.txt']) { |ntxt|
-          ndb.execute(sql) { |row|
-            ntxt.puts row.join("\t")
-          }
-          ndb.close
-          ntxt.close
-
-          sh 'diff', '-U3', otxt.path, ntxt.path do
-            # ignore status
-          end
-        }
-      }
-    ensure
-      odb&.close
-      ndb&.close
+        sh 'diff', '-U3', otxt.path, ntxt.path do
+          # ignore status
+        end
+      end
     end
   end
 
