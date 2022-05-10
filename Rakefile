@@ -93,6 +93,10 @@ def extract_version
   version
 end
 
+def current_version
+  ENV['BUILD_VERSION'] || extract_version()
+end
+
 def previous_version
   ENV['PREVIOUS_VERSION'] || Gem::Version.new(current_version).then { |current_version|
     Pathname.glob("versions/*/#{DOCSET}").map { |path|
