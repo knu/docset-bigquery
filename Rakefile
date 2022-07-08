@@ -129,6 +129,8 @@ def dump_index(docset, out)
       out.puts row.join("\t")
     end
   end
+
+  out.flush
 end
 
 desc "Fetch the #{DOCSET_NAME} document files."
@@ -592,12 +594,7 @@ end
 namespace :dump do
   desc 'Dump the index.'
   task :index do
-    Tempfile.create(['', '.txt']) do |txt|
-      dump_index(built_docset, txt)
-
-      txt.rewind
-      print txt.read
-    end
+    dump_index(built_docset, $stdout)
   end
 end
 
@@ -615,7 +612,9 @@ namespace :diff do
     Tempfile.create(['old', '.txt']) do |otxt|
       Tempfile.create(['new', '.txt']) do |ntxt|
         dump_index(previous_docset, otxt)
+        otxt.close
         dump_index(built_docset, ntxt)
+        ntxt.close
 
         puts "Diff in document indexes:"
         sh 'diff', '-U3', otxt.path, ntxt.path do
