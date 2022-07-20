@@ -450,6 +450,18 @@ task :build => [DL_DIR, ICON_FILE] do |t|
             end
           when 'Syntax'
             next
+          when /\A\w+_option_list\z/
+            h.xpath('./following-sibling::*').each { |e|
+              case e.name
+              when 'h1'..h.name
+                break
+              when 'table'
+                e.xpath("self::table[.//tr/th[1][normalize-space(.)='Options' or normalize-space(.)='NAME']]//tr/td[1][./code]").each { |td|
+                  name = td.xpath('normalize-space(./code)')
+                  index_item.(path, td, 'Option', name)
+                }
+              end
+            }
           when 'Defining the window frame clause'
             code, = h.xpath('./following-sibling::pre[1]/code')
             code.text.scan(/[A-Z]+(?: [A-Z]+)*/) { |query|
@@ -566,6 +578,7 @@ task :build => [DL_DIR, ICON_FILE] do |t|
     'Operator' => ['+', '~', '^', '<=', '!=', '<>', '.', '[]', '||',
                    'BETWEEN', 'NOT LIKE', 'AND', 'OR', 'NOT',
                    'IN', 'IS', 'IS DISTINCT FROM', 'UNNEST'],
+    'Option' => ['max_batching_rows', 'overwrite', 'field_delimiter', 'friendly_name'],
     'Section' => ['GCM', 'Loops', 'SQL UDFs', 'JSON subscript operator']
   }.each { |type, names|
     names.each { |name|
