@@ -593,7 +593,7 @@ task :build => [DL_DIR, ICON_FILE] do |t|
 
   puts "Finished creating #{DOCSET} #{version}"
 
-  Rake::Task[:diff].invoke
+  Rake::Task[:"diff:index"].invoke
 end
 
 task :dump do
@@ -716,7 +716,7 @@ task :push => DUC_WORKDIR do
 
         last_version = specific_versions.dig(1, 'version')
         puts "Diff to the latest version #{last_version}:"
-        system({ 'PREVIOUS_VERSION' => last_version }, "rake diff")
+        system({ 'PREVIOUS_VERSION' => last_version }, "rake diff:index")
 
         puts "New docset is committed and pushed to #{DUC_OWNER}:#{DUC_BRANCH}.  To send a PR, go to the following URL:"
         puts "\t" + "#{DUC_REPO_UPSTREAM.delete_suffix(".git")}/compare/master...#{DUC_OWNER}:#{DUC_BRANCH}?expand=1"
