@@ -278,6 +278,7 @@ task :build => [DL_DIR, ICON_FILE] do |t|
         doc.at('body').inner_html = article.inner_html
       end
 
+      doc.css('.devsite-breadcrumb-list').each(&:remove)
       doc.css('devsite-feedback, devsite-hats-survey, devsite-thumb-rating').each(&:remove)
 
       doc.at('head') << Nokogiri::XML::Node.new('link', doc).tap { |link|
