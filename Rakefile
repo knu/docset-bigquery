@@ -50,7 +50,7 @@ DOCS_ROOT = File.join(DOCSET, ROOT_RELPATH)
 DOCS_INDEX = File.join(DOCSET, INDEX_RELPATH)
 DOCS_URI = URI('https://cloud.google.com/bigquery/docs/reference/standard-sql/')
 HOST_URI = DOCS_URI + '/'
-DL_DIR = Pathname(DOCS_URI.host)
+DOCS_DIR = Pathname(DOCS_URI.host)
 ICON_SITE_URI = URI('https://cloudplatform-jp.googleblog.com/2015/04/google-bigquery.html')
 ICON_FILE = Pathname('icon.png')
 COMMON_CSS = Pathname('common.css')
@@ -146,7 +146,7 @@ namespace :fetch do
     # Google responds with gzip'd asset files despite wget's sending
     # `Accept-Encoding: identity`, and wget has no capability in
     # decoding gzip contents.
-    Dir.glob("#{DL_DIR}/**/*") { |path|
+    Dir.glob("#{DOCS_DIR}/**/*") { |path|
       next unless File.file?(path)
       begin
         data = Zlib::GzipReader.open(path, &:read)
@@ -185,7 +185,7 @@ namespace :fetch do
   end
 end
 
-file DL_DIR do
+file DOCS_DIR do
   Rake::Task[:'fetch:docs'].invoke
 end
 
@@ -194,7 +194,7 @@ file ICON_FILE do
 end
 
 desc 'Build a docset in the current directory.'
-task :build => [DL_DIR, ICON_FILE] do |t|
+task :build => [DOCS_DIR, ICON_FILE] do |t|
   rm_rf [DOCSET, DOCSET_ARCHIVE]
 
   mkdir_p DOCS_ROOT
@@ -202,7 +202,7 @@ task :build => [DL_DIR, ICON_FILE] do |t|
   cp 'Info.plist', File.join(DOCSET, 'Contents')
   cp ICON_FILE, DOCSET
 
-  cp_r DL_DIR.to_s + '/.', DOCS_ROOT
+  cp_r DOCS_DIR.to_s + '/.', DOCS_ROOT
 
   version = extract_version or raise "Version unknown"
 
@@ -742,7 +742,7 @@ end
 
 desc 'Delete all fetched files and generated files'
 task :clean do
-  rm_rf [DL_DIR, ICON_FILE, DOCSET, DOCSET_ARCHIVE, FETCH_LOG]
+  rm_rf [DOCS_DIR, ICON_FILE, DOCSET, DOCSET_ARCHIVE, FETCH_LOG]
 end
 
 task :default => :build
