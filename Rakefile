@@ -10,6 +10,24 @@ require 'uri'
 require 'zlib'
 require 'rubygems/version'
 
+def jenkins?
+  /jenkins-/.match?(ENV['BUILD_TAG'])
+end
+
+def paginate_command(cmd, diff: false)
+  case cmd
+  when Array
+    cmd = cmd.shelljoin
+  end
+
+  if $stdout.tty? || (diff && jenkins?)
+    pager = (ENV['DIFF_PAGER'] if diff) || ENV['PAGER'] || 'more'
+    "#{cmd} | #{pager}"
+  else
+    cmd
+  end
+end
+
 def expand(syntax)
   arrays = syntax.scan(/\w+|\[.*?\]|\S+/).map { |part|
     case part
@@ -596,15 +614,11 @@ task :build => [DOCS_DIR, ICON_FILE] do |t|
 
   puts "Finished creating #{DOCSET} #{version}"
 
-  Rake::Task[:"diff:index"].invoke
+  system paginate_command('rake diff:index', diff: true)
 end
 
 task :dump do
-  if $stdout.tty?
-    system "rake dump:index | #{ENV['PAGER'] || 'more'}"
-  else
-    system "rake dump:index"
-  end
+  system paginate_command('rake dump:index')
 end
 
 namespace :dump do
@@ -615,11 +629,7 @@ namespace :dump do
 end
 
 task :diff do
-  if $stdout.tty?
-    system "rake diff:index diff:docs | #{ENV['PAGER'] || 'more'}"
-  else
-    system "rake diff:index diff:docs"
-  end
+  system paginate_command('rake diff:index diff:docs', diff: true)
 end
 
 namespace :diff do
@@ -706,31 +716,34 @@ task :push => DUC_WORKDIR do
   }
 
   cd workdir.to_s do
-    sh 'git', 'diff', '--exit-code', docset_json.relative_path_from(workdir).to_s do |ok, _res|
-      if ok
-        puts "Nothing to commit."
-      else
-        sh 'git', 'add', *[archive, versioned_archive, docset_json].map { |path|
-          path.relative_path_from(workdir).to_s
-        }
-        sh 'git', 'commit', '-m', "Update #{DOCSET_NAME} docset to #{version}"
-        sh 'git', 'push', '-fu', 'origin', "#{DUC_BRANCH}:#{DUC_BRANCH}"
+    json_path = docset_json.relative_path_from(workdir).to_s
 
-        last_version = specific_versions.dig(1, 'version')
-        puts "Diff to the latest version #{last_version}:"
-        system({ 'PREVIOUS_VERSION' => last_version }, "rake diff:index")
-
-        puts "New docset is committed and pushed to #{DUC_OWNER}:#{DUC_BRANCH}.  To send a PR, go to the following URL:"
-        puts "\t" + "#{DUC_REPO_UPSTREAM.delete_suffix(".git")}/compare/master...#{DUC_OWNER}:#{DUC_BRANCH}?expand=1"
-      end
+    if system(*%W[git diff --exit-code --quiet #{json_path}])
+      puts "Nothing to commit."
+      next
     end
+
+    sh paginate_command(%W[git diff #{json_path}], diff: true)
+
+    sh 'git', 'add', *[archive, versioned_archive, docset_json].map { |path|
+      path.relative_path_from(workdir).to_s
+    }
+    sh 'git', 'commit', '-m', "Update #{DOCSET_NAME} docset to #{version}"
+    sh 'git', 'push', '-fu', 'origin', "#{DUC_BRANCH}:#{DUC_BRANCH}"
+
+    last_version = specific_versions.dig(1, 'version')
+    puts "Diff to the latest version #{last_version}:"
+    sh({ 'PREVIOUS_VERSION' => last_version }, paginate_command("rake diff:index", diff: true))
+
+    puts "New docset is committed and pushed to #{DUC_OWNER}:#{DUC_BRANCH}.  To send a PR, go to the following URL:"
+    puts "\t" + "#{DUC_REPO_UPSTREAM.delete_suffix(".git")}/compare/master...#{DUC_OWNER}:#{DUC_BRANCH}?expand=1"
   end
 end
 
 desc 'Send a pull-request'
 task :pr => DUC_WORKDIR do
   cd DUC_WORKDIR do
-    sh 'git', 'diff', '--exit-code', '--stat', "#{DUC_BRANCH}..upstream/master" do |ok, _res|
+    sh(*%W[git diff --exit-code --stat #{DUC_BRANCH}..upstream/master]) do |ok, _res|
       if ok
         puts "Nothing to send a pull-request for."
       else
