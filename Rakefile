@@ -357,7 +357,7 @@ task :build => [DOCS_DIR, ICON_FILE] do |t|
       when 'functions-and-operators.html'
         # This page is now a one-page function reference that wraps up
         # the following pages.
-      when /(?:utility-|_)functions\.html\z/, 'conversion_rules.html', 'conditional_expressions.html', 'operators.html'
+      when /(?:utility-|_)functions\.html\z/, 'conversion_rules.html', 'conditional_expressions.html', 'operators.html', 'table-functions-built-in.html'
         doc.xpath('//table/thead/tr[1]/th[position() = 1 and (text() = "Syntax" or text() = "Function")]').each { |th|
           th.xpath('./ancestor::table[1]/tbody/tr/td[1]').each { |td|
             case text = td.xpath('normalize-space(.)')
