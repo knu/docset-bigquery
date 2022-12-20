@@ -389,12 +389,12 @@ task :build => [DOCS_DIR, ICON_FILE] do |t|
           when 'Logical operators'
             h.xpath('(./following-sibling::p)[1]/code').each { |code|
               case text = code.text
-              when 'TRUE', 'FALSE', 'NULL'
+              when 'TRUE', 'FALSE', 'NULL', 'BOOL'
                 # skip
               when 'AND', 'OR', 'NOT'
                 index_item.(path, h, 'Operator', text)
               else
-                raise "#{path}: Unknown loginal operator: #{text}"
+                raise "#{path}: Unknown logical operator: #{text}"
               end
             }
           when /\A(Arithmetic|Bitwise|Logical|Comparison) operators\z/
