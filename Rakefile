@@ -398,8 +398,8 @@ task :build => [DOCS_DIR, ICON_FILE] do |t|
               end
             }
           when /\A(Arithmetic|Bitwise|Logical|Comparison) operators\z/
-            h.xpath('(./following-sibling::*/descendant-or-self::table)[1]/tbody/tr/td[2]/text()').each { |text|
-              syntax = text.xpath('normalize-space(.)')
+            h.xpath('((./following-sibling::*/descendant-or-self::table)[1]/tbody/tr/td[2])/code').each { |code|
+              syntax = code.xpath('normalize-space(.)')
               next unless /\bX\b/ === syntax
               op, rop, = syntax.gsub!(/\b[XYZ]\b/, '').split
               case op
