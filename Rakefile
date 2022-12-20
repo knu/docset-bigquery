@@ -454,6 +454,8 @@ task :build => [DOCS_DIR, ICON_FILE] do |t|
           case title = h.xpath('normalize-space(.)')
           when /\A([A-Z]{2,}) subqueries\b/
             index_item.(path, h, 'Query', $1)
+          when /\AArray subqueries\b/
+            index_item.(path, h, 'Query', 'ARRAY')
           else
             index_item.(path, h, 'Section', title)
           end
