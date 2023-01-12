@@ -479,6 +479,7 @@ task :build => [DOCS_DIR, ICON_FILE] do |t|
               when 'table'
                 e.xpath("self::table[.//tr/th[1][normalize-space(.)='Options' or normalize-space(.)='NAME']]//tr/td[1][./code]").each { |td|
                   name = td.xpath('normalize-space(./code)')
+                  warn "garbage found in option #{name}" if name.sub!(/\A\S+\K\s.+/s, '')
                   index_item.(path, td, 'Option', name)
                 }
               end
