@@ -414,10 +414,10 @@ task :build => [DOCS_DIR, ICON_FILE] do |t|
             index_item.(path, h, 'Operator', '.')
           when 'Array subscript operator'
             index_item.(path, h, 'Operator', '[]')
-            h.xpath('./following-sibling::*//li[./code = "position_keyword"]/ul/li').each { |li|
-              case func = li.at_xpath('./code')&.text
-              when /\A[A-Z][A-Z0-9]*(?:[_.][A-Z0-9]+)*\z/
-                index_item.(path, h, 'Function', func)
+            h.xpath('./following-sibling::*//li[./code = "position_keyword(index)"]/ul/li').each { |li|
+              case li.at_xpath('./code')&.text
+              when /\A([A-Z][A-Z0-9]*(?:[_.][A-Z0-9]+)*)\(/
+                index_item.(path, h, 'Function', $1)
               end
             }
           when 'JSON subscript operator'
