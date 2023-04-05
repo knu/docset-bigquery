@@ -524,7 +524,12 @@ task :build => [DOCS_DIR, ICON_FILE] do |t|
                   'ROWS', 'RANGE', 'OPTIONS'
                 'Query'
               else
-                raise "#{path}: Unknown directive: #{title}"
+                case File.basename(path)
+                when /\Abigqueryml-/
+                  'Option'
+                else
+                  raise "#{path}: Unknown directive: #{title}"
+                end
               end
             expand(title) { |query|
               index_item.(path, h, type, query)
@@ -601,7 +606,9 @@ task :build => [DOCS_DIR, ICON_FILE] do |t|
     'Operator' => ['+', '~', '^', '<=', '!=', '<>', '.', '[]', '||',
                    'BETWEEN', 'NOT LIKE', 'AND', 'OR', 'NOT',
                    'IN', 'IS', 'IS DISTINCT FROM', 'UNNEST'],
-    'Option' => ['max_batching_rows', 'overwrite', 'field_delimiter', 'friendly_name'],
+    'Option' => ['max_batching_rows', 'overwrite', 'field_delimiter', 'friendly_name',
+                 'HPARAM_TUNING_ALGORITHM', 'MODEL_TYPE', 'TIME_SERIES_TIMESTAMP_COL',
+                 'OPTIMIZER', 'TRANSFORM'],
     'Section' => ['GCM', 'Loops', 'SQL UDFs', 'JSON subscript operator']
   }.each { |type, names|
     names.each { |name|
