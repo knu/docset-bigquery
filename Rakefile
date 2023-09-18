@@ -648,7 +648,7 @@ task :build => [DOCS_DIR, ICON_FILE] do |t|
     'Option' => ['max_batching_rows', 'overwrite', 'field_delimiter', 'friendly_name',
                  'HPARAM_TUNING_ALGORITHM', 'MODEL_TYPE', 'TIME_SERIES_TIMESTAMP_COL',
                  'OPTIMIZER', 'TRANSFORM'],
-    'Section' => ['GCM', 'Loops', 'SQL UDFs', 'JSON subscript operator']
+    'Section' => ['Loops', 'SQL UDFs', 'JSON subscript operator']
   }.each { |type, names|
     names.each { |name|
       assert_exists.(name: name, type: type)
