@@ -510,7 +510,7 @@ task :build => [DOCS_DIR, ICON_FILE] do |t|
             end
           when 'Syntax'
             next
-          when /\A\w+_option_list\z/
+          when /(\A\w+_option_list| option list)\z/
             h.xpath('./following-sibling::*').each { |e|
               case e.name
               when 'h1'..h.name
