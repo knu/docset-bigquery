@@ -397,6 +397,10 @@ task :build => [DOCS_DIR, ICON_FILE] do |t|
 
         doc.css('h2[id], h3[id], h4[id], h5[id], h6[id]').each { |h|
           case title = h.xpath('normalize-space(.)')
+          when /\A(LIKE|IS DISTINCT FROM) operator\z/
+            syntax = h.at_xpath('./following-sibling::pre[1]/code').text
+            op = syntax[/\b[A-Z]+( \[?[A-Z]+\]?)+/]
+            index_item.(path, h, 'Operator', op)
           when /\A(?<func>(?<WORD>[A-Z][A-Z0-9]*(?:[_.][A-Z0-9]+)*)(?: \g<WORD>)*)( (?:and|or) \g<func>)*(?: (?<thing>operators?|expr))?\z/
             # 'or' is for 'JSON_EXTRACT or JSON_EXTRACT_SCALAR'
             type =
@@ -425,29 +429,40 @@ task :build => [DOCS_DIR, ICON_FILE] do |t|
             h.xpath('((./following-sibling::*/descendant-or-self::table)[1]/tbody/tr/td[2])/code').each { |code|
               syntax = code.xpath('normalize-space(.)')
               next unless /\bX\b/ === syntax
-              op, rop, = syntax.gsub!(/\b[XYZ]\b/, '').split
+              op, rop, = syntax.gsub(/\b[XYZ]\b/, '').split
               case op
               when '[NOT]'
                 index_item.(path, h, 'Operator', rop)
                 index_item.(path, h, 'Operator', "NOT #{rop}")
               else
-                index_item.(path, h, 'Operator', op)
+                if syntax.start_with?(op)
+                  index_item.(path, h, 'Operator', "#{op} (Unary)")
+                else
+                  index_item.(path, h, 'Operator', op)
+                end
               end
             }
           when 'Field access operator'
             index_item.(path, h, 'Operator', '.')
-          when 'Array subscript operator'
-            index_item.(path, h, 'Operator', '[]')
-            h.xpath('./following-sibling::*//li[./code = "position_keyword(index)"]/ul/li').each { |li|
+          when 'Array subscript operator', 'Struct subscript operator'
+            index_item.(path, h, 'Operator', "[] (#{title})")
+            h.xpath('./following-sibling::*//li[starts-with(normalize-space(.), "position_keyword(index):")]/ul/li').each { |li|
               case li.at_xpath('./code')&.text
               when /\A([A-Z][A-Z0-9]*(?:[_.][A-Z0-9]+)*)\(/
                 index_item.(path, h, 'Function', $1)
               end
             }
           when 'JSON subscript operator'
-            index_item.(path, h, 'Operator', '[]')
+            index_item.(path, h, 'Operator', "[] (#{title})")
           when 'Date arithmetics operators', 'Interval arithmetic operators'
             # Nothing to link
+          when 'Quantified LIKE operator'
+            h.xpath('./following-sibling::*//li[starts-with(normalize-space(.), "quantifier:")]/ul/li').each { |li|
+              case li.at_xpath('.//code')&.text
+              when /\A([A-Z]+)/
+                index_item.(path, h, 'Operator', "LIKE #{$1}")
+              end
+            }
           when 'Concatenation operator'
             index_item.(path, h, 'Operator', '||')
           when / operators?\z/
@@ -627,9 +642,9 @@ task :build => [DOCS_DIR, ICON_FILE] do |t|
     'Type' => ['INT64', 'BIGINT', 'FLOAT64', 'NUMERIC', 'BOOL', 'STRING', 'BYTES',
                'DATE', 'DATETIME', 'TIME', 'TIMESTAMP',
                'ARRAY', 'STRUCT', 'BIGNUMERIC'],
-    'Operator' => ['+', '~', '^', '<=', '!=', '<>', '.', '[]', '||',
-                   'BETWEEN', 'NOT LIKE', 'AND', 'OR', 'NOT',
-                   'IN', 'IS', 'IS DISTINCT FROM', 'UNNEST'],
+    'Operator' => ['+', '~ (Unary)', '^', '<=', '!=', '<>', '.', '[] (Array subscript operator)', '||',
+                   'BETWEEN', 'NOT LIKE', 'LIKE SOME', 'AND', 'OR', 'NOT',
+                   'IN', 'IS', 'IS [NOT] DISTINCT FROM', 'IS [NOT] LIKE', 'UNNEST'],
     'Option' => ['max_batching_rows', 'overwrite', 'field_delimiter', 'friendly_name',
                  'HPARAM_TUNING_ALGORITHM', 'MODEL_TYPE', 'TIME_SERIES_TIMESTAMP_COL',
                  'OPTIMIZER', 'TRANSFORM'],
