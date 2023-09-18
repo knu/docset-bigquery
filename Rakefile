@@ -157,9 +157,12 @@ task :fetch => %i[fetch:icon fetch:docs]
 namespace :fetch do
   task :docs do
     puts 'Downloading %s' % DOCS_URI
-    sh 'wget', '-nv', '--append-output', FETCH_LOG, '-r', '--no-parent', '-N', '-p',
-       '--reject-regex=\?hl=|\?_gl=|://cloud\.google\.com/images/(artwork|backgrounds|home|icons|logos)/|\.md$',
-       DOCS_URI.to_s
+    wget_options = %W[
+      -nv --append-output #{FETCH_LOG} -N -p -E
+      #{'--reject-regex=\?hl=|\?_gl=|://cloud\.google\.com/images/(artwork|backgrounds|home|icons|logos)/|\.md$'}
+    ]
+    sh 'wget', *wget_options, DOCS_URI.to_s
+    sh 'wget', *wget_options, '-r', '--no-parent', (DOCS_URI + 'query-syntax').to_s
 
     # Google responds with gzip'd asset files despite wget's sending
     # `Accept-Encoding: identity`, and wget has no capability in
@@ -273,7 +276,11 @@ task :build => [DOCS_DIR, ICON_FILE] do |t|
         doc.css("#{tag}[#{attr}]").each { |e|
           abs = uri + e[attr].sub(/\.md\z/, '')
           rel = HOST_URI.route_to(abs)
-          next if rel.host || %r{\A\.\./} === rel.path
+          if rel.host || %r{\A\.\./} === rel.path
+            # Rewrite all URLs to those relative from the base URL
+            e[attr] = abs
+            next
+          end
           case localpath = rel.path.chomp('/')
           when 'bigquery/sql-reference'
             abs.path = (DOCS_URI + 'index.html').path
