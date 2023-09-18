@@ -4,6 +4,7 @@ Bundler.require
 
 require 'json'
 require 'pathname'
+require 'set'
 require 'tempfile'
 require 'time'
 require 'uri'
@@ -261,6 +262,8 @@ task :build => [DOCS_DIR, ICON_FILE] do |t|
 
   cp COMMON_CSS, File.join(DOCS_ROOT, HOST_URI.route_to(DOCS_URI).to_s)
 
+  bad_hrefs = Set[]
+
   cd DOCS_ROOT do
     Dir.glob("#{HOST_URI.route_to(DOCS_URI)}*.html") { |path|
       uri = HOST_URI + path
@@ -274,7 +277,21 @@ task :build => [DOCS_DIR, ICON_FILE] do |t|
 
       URI_ATTRS.each { |tag, attr|
         doc.css("#{tag}[#{attr}]").each { |e|
-          abs = uri + e[attr].sub(/\.md\z/, '')
+          begin
+            href = e[attr]
+
+            case abs = uri + href
+            when URI::HTTP
+              # ok
+            else
+              next
+            end
+          rescue URI::Error => e
+            warn "#{e.message} in #{path}" if bad_hrefs.add?(href)
+            next
+          end
+
+          abs.path = abs.path.chomp('.md')
           rel = HOST_URI.route_to(abs)
           if rel.host || %r{\A\.\./} === rel.path
             # Rewrite all URLs to those relative from the base URL
