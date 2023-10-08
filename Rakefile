@@ -1,10 +1,10 @@
 # frozen_string_literal: true
+
 require 'bundler/setup'
 Bundler.require
 
 require 'json'
 require 'pathname'
-require 'set'
 require 'tempfile'
 require 'time'
 require 'uri'
@@ -168,8 +168,9 @@ namespace :fetch do
     # Google responds with gzip'd asset files despite wget's sending
     # `Accept-Encoding: identity`, and wget has no capability in
     # decoding gzip contents.
-    Dir.glob("#{DOCS_DIR}/**/*") { |path|
+    Dir.glob("#{DOCS_DIR}/**/*") do |path|
       next unless File.file?(path)
+
       begin
         data = Zlib::GzipReader.open(path, &:read)
       rescue Zlib::GzipFile::Error
@@ -187,11 +188,11 @@ namespace :fetch do
           mv path, path_with_suffix
         end
       end
-    }
+    end
   end
 
   task :icon do
-    Tempfile.create(['icon', '.png']) { |temp|
+    Tempfile.create(['icon', '.png']) do |temp|
       agent = Mechanize.new
       page = agent.get(ICON_SITE_URI)
       image = page.image_with(xpath: '//img[@title="Google BigQuery"]')
@@ -203,7 +204,7 @@ namespace :fetch do
           sh 'convert', '-resample', '64x64', temp.path, ICON_FILE.to_s
         end
       end
-    }
+    end
   end
 end
 
@@ -244,25 +245,76 @@ task :build => [DOCS_DIR, ICON_FILE] do |t|
     INSERT OR IGNORE INTO searchIndex(name, type, path) VALUES (?, ?, ?);
   SQL
 
-  index_item = ->(path, node, type, name) {
+  get_count = ->(type:, name:, path: nil) do
+    db.get_first_value(<<~SQL, type, name, *([path, "#{path}#%"] if path))
+      SELECT COUNT(*) FROM searchIndex WHERE type = ? AND name = ?#{' AND (path = ? OR path LIKE ?)' if path};
+    SQL
+  end
+
+  index_item = ->(path, node, type, name) do
     id = '//apple_ref/cpp/%s/%s' % [type, name].map { |s|
       URI.encode_www_form_component(s).gsub('+', '%20')
     }
-    node.prepend_child(
-      Nokogiri::XML::Node.new('a', node.document).tap { |a|
-        a['name'] = id
-        a['class'] = 'dashAnchor'
-      }
-    )
+    a = Nokogiri::XML::Node.new('a', node.document).tap { |a|
+      a['name'] = id
+      a['class'] = 'dashAnchor'
+    }
+    a_parent =
+      case node.name
+      when 'table', 'tr'
+        node.at_css('th, td')
+      end || node
+
+    a_parent.prepend_child(a)
+
     url = "#{path}\##{id}"
     insert.execute(name, type, url)
-  }
+  end
+
+  bad_hrefs = Set[]
+
+  resolve_url = ->(href, uri) do
+    begin
+      case abs = uri + href
+      when URI::HTTP
+        # ok
+      else
+        return href
+      end
+    rescue URI::Error => e
+      case href
+      when /\Adata:/
+        return href
+      end
+      warn e.message if bad_hrefs.add?(href)
+      return href
+    end
+
+    abs.path = abs.path.chomp('.md')
+    rel = HOST_URI.route_to(abs)
+    if rel.host || %r{\A\.\./} === rel.path
+      return abs
+    end
+
+    case localpath = rel.path.chomp('/')
+    when 'bigquery/sql-reference'
+      abs.path = (DOCS_URI + 'index.html').path
+      return uri.route_to(abs)
+    else
+      FILE_SUFFIXES.each do |suffix|
+        if File.file?(localpath + suffix)
+          abs.path = abs.path.chomp('/') + suffix
+          return uri.route_to(abs)
+        end
+      end
+    end
+
+    abs
+  end
 
   puts 'Indexing documents'
 
   cp COMMON_CSS, File.join(DOCS_ROOT, HOST_URI.route_to(DOCS_URI).to_s)
-
-  bad_hrefs = Set[]
 
   cd DOCS_ROOT do
     Dir.glob("#{HOST_URI.route_to(DOCS_URI)}*.html") { |path|
@@ -275,44 +327,11 @@ task :build => [DOCS_DIR, ICON_FILE] do |t|
 
       doc.xpath('//meta[not(@charset or @name = "viewport")] | //script | //link[not(@rel="stylesheet")]').each(&:remove)
 
-      URI_ATTRS.each { |tag, attr|
-        doc.css("#{tag}[#{attr}]").each { |e|
-          begin
-            href = e[attr]
-
-            case abs = uri + href
-            when URI::HTTP
-              # ok
-            else
-              next
-            end
-          rescue URI::Error => e
-            warn "#{e.message} in #{path}" if bad_hrefs.add?(href)
-            next
-          end
-
-          abs.path = abs.path.chomp('.md')
-          rel = HOST_URI.route_to(abs)
-          if rel.host || %r{\A\.\./} === rel.path
-            # Rewrite all URLs to those relative from the base URL
-            e[attr] = abs
-            next
-          end
-          case localpath = rel.path.chomp('/')
-          when 'bigquery/sql-reference'
-            abs.path = (DOCS_URI + 'index.html').path
-            e[attr] = uri.route_to(abs)
-          else
-            FILE_SUFFIXES.each { |suffix|
-              if File.file?(localpath + suffix)
-                abs.path = abs.path.chomp('/') + suffix
-                e[attr] = uri.route_to(abs)
-                break
-              end
-            }
-          end
-        }
-      }
+      URI_ATTRS.each do |tag, attr|
+        doc.css("#{tag}[#{attr}]").each do |e|
+          e[attr] = resolve_url.(e[attr], uri)
+        end
+      end
 
       doc.xpath('//link[contains(@href, "//")]').each(&:remove)
 
@@ -584,14 +603,6 @@ task :build => [DOCS_DIR, ICON_FILE] do |t|
 
   insert.close
 
-  get_count = ->(**criteria) do
-    db.get_first_value(<<-SQL, criteria.values)
-      SELECT COUNT(*) from searchIndex where #{
-        criteria.each_key.map { |column| "#{column} = ?" }.join(' and ')
-      }
-    SQL
-  end
-
   assert_exists = ->(**criteria) do
     if get_count.(**criteria).zero?
       raise "#{criteria.inspect} not found in index!"
@@ -649,11 +660,11 @@ task :build => [DOCS_DIR, ICON_FILE] do |t|
                  'HPARAM_TUNING_ALGORITHM', 'MODEL_TYPE', 'TIME_SERIES_TIMESTAMP_COL',
                  'OPTIMIZER', 'TRANSFORM'],
     'Section' => ['Loops', 'SQL UDFs', 'JSON subscript operator']
-  }.each { |type, names|
-    names.each { |name|
+  }.each do |type, names|
+    names.each do |name|
       assert_exists.(name: name, type: type)
-    }
-  }
+    end
+  end
 
   db.close
 
@@ -706,10 +717,10 @@ namespace :diff do
 
     puts "Diff in document files:"
     sh 'diff', '-rNU3',
-      '-x', '*.js',
-      '-x', '*.css',
-      '-x', '*.svg',
-      old_root, DOCS_ROOT do
+       '-x', '*.js',
+       '-x', '*.css',
+       '-x', '*.svg',
+       old_root, DOCS_ROOT do
       # ignore status
     end
   end
@@ -735,7 +746,7 @@ task :push => DUC_WORKDIR do
   puts "Resetting the working directory"
   cd workdir.to_s do
     sh 'git', 'remote', 'update'
-    sh 'git', 'rev-parse', '--verify', '--quiet', DUC_BRANCH do |ok, |
+    sh 'git', 'rev-parse', '--verify', '--quiet', DUC_BRANCH do |ok,|
       if ok
         sh 'git', 'checkout', DUC_BRANCH
         sh 'git', 'reset', '--hard', 'upstream/master'
