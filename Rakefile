@@ -355,7 +355,14 @@ task :build => [DOCS_DIR, ICON_FILE] do |t|
       end
 
       if h1 = doc.at('h1')
-        index_item.(path, h1, 'Section', h1.xpath('normalize-space(.)'))
+        title = h1.xpath('normalize-space(.)')
+        index_item.(path, h1, 'Section', title)
+        case title
+        when /The ([A-Z0-9_.]+) function/
+          index_item.(path, h1, 'Function', $1)
+        when /The ([A-Z]+(?: [A-Z]+)*) statement/
+          index_item.(path, h1, 'Statement', $1)
+        end
       end
 
       case basename = File.basename(path)
@@ -616,7 +623,8 @@ task :build => [DOCS_DIR, ICON_FILE] do |t|
     'Statement' => ['SELECT', 'INSERT', 'INSERT SELECT', 'UPDATE', 'DELETE',
                     'CREATE PROCEDURE', 'DECLARE', 'IF', 'WHILE', 'ASSERT',
                     'CREATE EXTERNAL TABLE', 'EXPORT DATA', 'DROP TABLE FUNCTION',
-                    'GRANT', 'REVOKE'],
+                    'GRANT', 'REVOKE',
+                    'CREATE MODEL', 'EXPORT MODEL'],
     'Query' => ['JOIN', 'INNER JOIN',
                 'UNION', 'INTERSECT', 'EXCEPT',
                 'FOR SYSTEM_TIME AS OF',
@@ -649,7 +657,8 @@ task :build => [DOCS_DIR, ICON_FILE] do |t|
                    'TIME_DIFF',
                    'TIMESTAMP_DIFF',
                    'GENERATE_UUID',
-                   'CASE', 'COALESCE', 'NULLIF'],
+                   'CASE', 'COALESCE', 'NULLIF',
+                   'ML.PREDICT', 'ML.WEIGHTS', 'ML.DISTANCE'],
     'Type' => ['INT64', 'BIGINT', 'FLOAT64', 'NUMERIC', 'BOOL', 'STRING', 'BYTES',
                'DATE', 'DATETIME', 'TIME', 'TIMESTAMP',
                'ARRAY', 'STRUCT', 'BIGNUMERIC'],
