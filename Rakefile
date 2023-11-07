@@ -361,9 +361,9 @@ task :build => [DOCS_DIR, ICON_FILE] do |t|
       end
 
       if h1 = doc.at('h1')
-        title = h1.xpath('normalize-space(.)')
-        index_item.(path, h1, 'Section', title)
-        case title
+        page_title = h1.xpath('normalize-space(.)')
+        index_item.(path, h1, 'Section', page_title)
+        case page_title
         when /The ([A-Z0-9_.]+) function/
           index_item.(path, h1, 'Function', $1)
         when /The ([A-Z]+(?: [A-Z]+)*) statement/
@@ -595,9 +595,11 @@ task :build => [DOCS_DIR, ICON_FILE] do |t|
                   'ROWS', 'RANGE', 'OPTIONS'
                 'Query'
               else
-                case File.basename(path)
-                when /\Abigqueryml-/
+                case
+                when File.basename(path).match?(/\Abigqueryml-/)
                   'Option'
+                when page_title.match?(/ functions\z/)
+                  'Function'
                 else
                   raise "#{path}: Unknown directive: #{title}"
                 end
