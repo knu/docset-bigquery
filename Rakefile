@@ -234,21 +234,27 @@ task :build => [DOCS_DIR, ICON_FILE] do |t|
   # Index
   db = SQLite3::Database.new(DOCS_INDEX)
 
-  db.execute(<<-SQL)
+  db.execute(<<~SQL)
     CREATE TABLE searchIndex(id INTEGER PRIMARY KEY, name TEXT, type TEXT, path TEXT);
   SQL
-  db.execute(<<-SQL)
+  db.execute(<<~SQL)
     CREATE UNIQUE INDEX anchor ON searchIndex (name, type, path);
   SQL
 
-  insert = db.prepare(<<-SQL)
+  insert = db.prepare(<<~SQL)
     INSERT OR IGNORE INTO searchIndex(name, type, path) VALUES (?, ?, ?);
   SQL
 
   get_count = ->(type:, name:, path: nil) do
-    db.get_first_value(<<~SQL, type, name, *([path, "#{path}#%"] if path))
-      SELECT COUNT(*) FROM searchIndex WHERE type = ? AND name = ?#{' AND (path = ? OR path LIKE ?)' if path};
-    SQL
+    if path
+      db.get_first_value(<<~SQL, type, name, path, "#{path}#%")
+        SELECT COUNT(*) FROM searchIndex WHERE type = ? AND name = ? AND (path = ? OR path LIKE ?);
+      SQL
+    else
+      db.get_first_value(<<~SQL, type, name)
+        SELECT COUNT(*) FROM searchIndex WHERE type = ? AND name = ?;
+      SQL
+    end
   end
 
   index_item = ->(path, node, type, name) do
