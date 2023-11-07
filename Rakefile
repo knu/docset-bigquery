@@ -596,10 +596,10 @@ task :build => [DOCS_DIR, ICON_FILE] do |t|
                 'Query'
               else
                 case
-                when File.basename(path).match?(/\Abigqueryml-/)
-                  'Option'
                 when page_title.match?(/ functions\z/)
                   'Function'
+                when File.basename(path).match?(/\Abigqueryml-/)
+                  'Option'
                 else
                   raise "#{path}: Unknown directive: #{title}"
                 end
