@@ -846,6 +846,11 @@ task :push => DUC_WORKDIR do
     end
   end
 
+  unless `git tag -l v#{version}`.empty?
+    sh(*%W[git tag -d v#{version}]) {}
+    sh(*%W[gh release delete --cleanup-tag --yes v#{version}]) {}
+  end
+
   sh(*%W[gh release create v#{version} -t v#{version} -n #{<<~NOTES} -- #{archive}])
     This docset is generated from the official documentation of GoogleSQL and BigQuery.
 
