@@ -463,7 +463,7 @@ task :build => [DOCS_DIR, ICON_FILE] do |t|
           case title = h.xpath('normalize-space(.)')
           when /\A(LIKE|IS DISTINCT FROM) operator\z/
             syntax = h.at_xpath('./following-sibling::pre[1]/code').text
-            op = syntax[/\b[A-Z]+( \[?[A-Z]+\]?)+/]
+            op = syntax[/(\[?[A-Z]+\]? )+[A-Z]+/]
             index_item.(path, h, 'Operator', op)
           when /\A(?<func>(?<WORD>[A-Z][A-Z0-9]*(?:[_.][A-Z0-9]+)*)(?: \g<WORD>)*)( (?:and|or) \g<func>)*(?: (?<thing>operators?|expr))?\z/
             # 'or' is for 'JSON_EXTRACT or JSON_EXTRACT_SCALAR'
@@ -704,7 +704,7 @@ task :build => [DOCS_DIR, ICON_FILE] do |t|
                'ARRAY', 'STRUCT', 'BIGNUMERIC'],
     'Operator' => ['+', '~ (Unary)', '^', '<=', '!=', '<>', '.', '[] (Array subscript operator)', '||',
                    'BETWEEN', 'NOT LIKE', 'LIKE SOME', 'AND', 'OR', 'NOT',
-                   'IN', 'IS', 'IS [NOT] DISTINCT FROM', 'IS [NOT] LIKE', 'UNNEST'],
+                   'IN', 'IS', 'IS [NOT] DISTINCT FROM', '[NOT] LIKE', 'UNNEST'],
     'Option' => ['max_batching_rows', 'overwrite', 'field_delimiter', 'friendly_name',
                  'HPARAM_TUNING_ALGORITHM', 'MODEL_TYPE', 'TIME_SERIES_TIMESTAMP_COL',
                  'OPTIMIZER', 'TRANSFORM'],
