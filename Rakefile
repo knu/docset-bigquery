@@ -592,7 +592,7 @@ task :build => [DOCS_DIR, ICON_FILE] do |t|
             code.text.scan(/[A-Z]+(?: [A-Z]+)*/) { |query|
               index_item.(path, code, 'Query', query) unless query == 'AND'
             }
-          when /\A(?<ws>(?<w>[A-Z]+)(?: \g<w>)*) (?<t>statement|keyword|[cC]lause|operator)(?: and \g<ws> \k<t>)?\z/
+          when /\A(?<ws>(?<w>[A-Z]+)(?: \g<w>)*) (?<t>statement|keyword|[cC]lause|operator)(?: and \g<ws> \k<t>)?(?: \(|\z)/
             type =
               case $~[:t]
               when 'statement'
