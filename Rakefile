@@ -462,7 +462,7 @@ task :build => [DOCS_DIR, ICON_FILE] do |t|
         doc.css('h2[id], h3[id], h4[id], h5[id], h6[id]').each { |h|
           case title = h.xpath('normalize-space(.)')
           when /\A(LIKE|IS DISTINCT FROM) operator\z/
-            syntax = h.at_xpath('./following-sibling::pre[1]/code').text
+            syntax = h.at_xpath('(./following-sibling::pre | ./following-sibling::devsite-code/pre)[1]/code').text
             op = syntax[/(\[?[A-Z]+\]? )+[A-Z]+/]
             index_item.(path, h, 'Operator', op)
           when /\A(?<func>(?<WORD>[A-Z][A-Z0-9]*(?:[_.][A-Z0-9]+)*)(?: \g<WORD>)*)( (?:and|or) \g<func>)*(?: (?<thing>operators?|expr))?\z/
@@ -588,7 +588,7 @@ task :build => [DOCS_DIR, ICON_FILE] do |t|
               end
             }
           when 'Defining the window frame clause'
-            code, = h.xpath('./following-sibling::pre[1]/code')
+            code, = h.xpath('(./following-sibling::pre | ./following-sibling::devsite-code/pre)[1]/code')
             code.text.scan(/[A-Z]+(?: [A-Z]+)*/) { |query|
               index_item.(path, code, 'Query', query) unless query == 'AND'
             }
