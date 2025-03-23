@@ -350,6 +350,10 @@ task :build => [DOCS_DIR, ICON_FILE] do |t|
     abs
   end
 
+  heading_text = ->(h) do
+    h.xpath(".//text()[not(ancestor::div[parent::#{h.name}])]").map(&:to_s).join.strip.gsub(/\s+/, ' ')
+  end
+
   puts 'Indexing documents'
 
   cp COMMON_CSS, File.join(DOCS_ROOT, HOST_URI.route_to(DOCS_URI).to_s)
@@ -393,7 +397,7 @@ task :build => [DOCS_DIR, ICON_FILE] do |t|
       end
 
       if h1 = doc.at('h1')
-        page_title = h1.xpath('normalize-space(.)')
+        page_title = heading_text.(h1)
         index_item.(path, h1, 'Section', page_title)
         case page_title
         when /The ([A-Z0-9_.]+) function/
@@ -406,7 +410,7 @@ task :build => [DOCS_DIR, ICON_FILE] do |t|
       case basename = File.basename(path)
       when 'index.html'
         doc.css('h2[id]').each { |h|
-          title = h.xpath('normalize-space(.)')
+          title = heading_text.(h)
           index_item.(path, h, 'Section', title)
         }
         if h = doc.at('h3#sql')
@@ -417,7 +421,7 @@ task :build => [DOCS_DIR, ICON_FILE] do |t|
         end
       when 'data-types.html'
         doc.css('h2[id], h3[id], h4[id], h5[id], h6[id]').each { |h|
-          case title = h.xpath('normalize-space(.)')
+          case title = heading_text.(h)
           when 'Format', 'Canonical format', 'Examples'
             next
           else
@@ -460,7 +464,7 @@ task :build => [DOCS_DIR, ICON_FILE] do |t|
         }
 
         doc.css('h2[id], h3[id], h4[id], h5[id], h6[id]').each { |h|
-          case title = h.xpath('normalize-space(.)')
+          case title = heading_text.(h)
           when /\A(LIKE|IS DISTINCT FROM) operator\z/
             syntax = h.at_xpath('(./following-sibling::pre | ./following-sibling::devsite-code/pre)[1]/code').text
             op = syntax[/(\[?[A-Z]+\]? )+[A-Z]+/]
@@ -540,7 +544,7 @@ task :build => [DOCS_DIR, ICON_FILE] do |t|
         }
       when 'procedural-language.html'
         doc.css('h2[id], h3[id]').each { |h|
-          case title = h.xpath('normalize-space(.)')
+          case title = heading_text.(h)
           when /\A[A-Z]{2,}\b/
             index_item.(path, h, 'Statement', title)
           else
@@ -549,12 +553,12 @@ task :build => [DOCS_DIR, ICON_FILE] do |t|
         }
       when 'aead-encryption-concepts.html'
         doc.css('h2[id], h3[id], h4[id], h5[id], h6[id]').each { |h|
-          title = h.xpath('normalize-space(.)')
+          title = heading_text.(h)
           index_item.(path, h, 'Section', title)
         }
       when 'subqueries.html'
         doc.css('h2[id], h3[id]').each { |h|
-          case title = h.xpath('normalize-space(.)')
+          case title = heading_text.(h)
           when /\A([A-Z]{2,}) subqueries\b/
             index_item.(path, h, 'Query', $1)
           when /\AArray subqueries\b/
@@ -567,7 +571,7 @@ task :build => [DOCS_DIR, ICON_FILE] do |t|
         doc.css('h2[id], h3[id], h4[id], h5[id], h6[id]').each { |h|
           next if h.at_xpath('./ancestor::*[contains(@class, "ds-selector-tabs")]')
 
-          case title = h.xpath('normalize-space(.)')
+          case title = heading_text.(h)
           when 'SQL syntax'
             if basename == 'query-syntax.html'
               index_item.(path, h, 'Statement', 'SELECT')
