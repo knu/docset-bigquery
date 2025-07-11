@@ -192,7 +192,7 @@ namespace :fetch do
     puts 'Downloading %s' % DOCS_URI
     wget_options = %W[
       -nv --append-output #{FETCH_LOG} -N -p -E
-      #{'--reject-regex=\?hl=|\?_gl=|://cloud\.google\.com/images/(artwork|backgrounds|home|icons|logos)/|\.md$'}
+      #{'--reject-regex=\?hl=|\?_gl=|://cloud\.google\.com/(images/(artwork|backgrounds|home|icons|logos)/|bigquery/docs/reference/standard-sql/(jsonpath_format|bigquery/docs/access-control|tbd)$)|\.md$'}
     ]
     sh 'wget', *wget_options, DOCS_URI.to_s
     sh 'wget', *wget_options, '-r', '--no-parent', (DOCS_URI + 'query-syntax').to_s
@@ -338,6 +338,15 @@ task :build => [DOCS_DIR, ICON_FILE] do |t|
     when 'bigquery/sql-reference'
       abs.path = (DOCS_URI + 'index.html').path
       return uri.route_to(abs)
+    when 'bigquery/docs/reference/standard-sql/jsonpath_format'
+      warn "Rewriting a dead link: #{href}"
+      return uri.route_to(DOCS_URI + 'json_functions#JSONPath_format')
+    when 'bigquery/docs/reference/standard-sql/bigquery/docs/access-control'
+      warn "Rewriting a dead link: #{href}"
+      return DOCS_URI + '../../access-control'
+    when 'bigquery/docs/reference/standard-sql/tbd'
+      warn "Rewriting a dead link: #{href}"
+      return URI('#')
     else
       FILE_SUFFIXES.each do |suffix|
         if File.file?(localpath + suffix)
