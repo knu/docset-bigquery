@@ -23,9 +23,9 @@ References
 
 - [GitHub Project](https://github.com/knu/docset-presto)
 
-- [BigQuery Documentation](https://cloud.google.com/bigquery/docs/)
+- [BigQuery Documentation](https://docs.cloud.google.com/bigquery/docs/)
 
-- [BigQuery Standard SQL Documentation](https://cloud.google.com/bigquery/docs/reference/standard-sql/)
+- [BigQuery Standard SQL Documentation](https://docs.cloud.google.com/bigquery/docs/reference/standard-sql/)
 
 License
 -------

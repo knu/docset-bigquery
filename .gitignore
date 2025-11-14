@@ -4,7 +4,7 @@ Gemfile.lock
 *.docset/
 *.tgz
 icon.png
-cloud.google.com/
+docs.cloud.google.com/
 wget.log
 Dash-User-Contributions/
 tmp/
