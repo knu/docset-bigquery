@@ -367,7 +367,7 @@ task :build => [DOCS_DIR, ICON_FILE] do |t|
   end
 
   heading_text = ->(h) do
-    h.xpath(".//text()[not(ancestor::div[parent::#{h.name}])]").map(&:to_s).join.strip.gsub(/\s+/, ' ')
+    h.xpath(".//text()[not(ancestor::*[starts-with(local-name(), 'devsite-') and parent::#{h.name}] or ancestor::div[parent::#{h.name}])]").map(&:to_s).join.strip.gsub(/\s+/, ' ')
   end
 
   puts 'Indexing documents'
