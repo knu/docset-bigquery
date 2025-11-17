@@ -193,13 +193,8 @@ namespace :fetch do
 
     wget_options = %W[
       -nv --append-output #{FETCH_LOG} -N -p -E
-      #{'--reject-regex=\?hl=|\?_gl=|://docs\.cloud\.google\.com/(images/(artwork|backgrounds|home|icons|logos)/|bigquery/docs/reference/standard-sql/(bigqueryml-syntax-ai-generate-embedding|endpoint_idle_ttl|bigquery/docs/access-control|tbd)$)|\.md$'}
+      #{'--reject-regex=\?hl=|\?_gl=|://docs\.cloud\.google\.com/(images/(artwork|backgrounds|home|icons|logos)/|bigquery/docs/reference/standard-sql/(endpoint_idle_ttl|bigquery/docs/access-control|tbd)$)|\.md$'}
     ]
-    sh 'wget', *wget_options, 'https://docs.cloud.google.com/bigquery/docs/reference/standard-sql/bigqueryml-syntax-ai-generate-embedding' do |ok, _res|
-      if ok
-        raise 'The AI.GENERATE_EMBEDDING page appeared!'
-      end
-    end
 
     sh 'wget', *wget_options, DOCS_URI.to_s
     sh 'wget', *wget_options, '-r', '--no-parent', (DOCS_URI + 'query-syntax').to_s
@@ -351,7 +346,7 @@ task :build => [DOCS_DIR, ICON_FILE] do |t|
     when 'bigquery/docs/reference/standard-sql/endpoint_idle_ttl'
       warn "Rewriting a dead link: #{href}"
       return DOCS_URI + 'bigqueryml-syntax-create-remote-model-open#endpoint-idle-ttl'
-    when 'bigquery/docs/reference/standard-sql/tbd', 'bigquery/docs/reference/standard-sql/bigqueryml-syntax-ai-generate-embedding'
+    when 'bigquery/docs/reference/standard-sql/tbd'
       warn "Rewriting a dead link: #{href}"
       return URI('#')
     else
