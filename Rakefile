@@ -533,7 +533,7 @@ task :build => [DOCS_DIR, ICON_FILE] do |t|
             }
           when 'JSON subscript operator'
             index_item.(path, h, 'Operator', "[] (#{title})")
-          when 'Date arithmetics operators', 'Interval arithmetic operators'
+          when 'Date arithmetics operators', 'Interval arithmetic operators', 'Graph logical operators'
             # Nothing to link
           when 'Quantified LIKE operator'
             h.xpath('./following-sibling::*//li[starts-with(normalize-space(.), "quantifier:")]/ul/li').each { |li|
