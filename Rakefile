@@ -452,7 +452,7 @@ task :build => [DOCS_DIR, ICON_FILE] do |t|
               when /\A([A-Z][A-Z0-9]*)\z/
                 index_item.(path, td, 'Type', $1)
               else
-                raise "#{path}: Unknown type: #{text}"
+                raise "#{path}: Unknown type: #{type}"
               end
             }
           }
