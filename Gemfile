@@ -6,5 +6,5 @@ gem 'nokogiri'
 gem 'rake'
 
 group :development do
-  gem 'pry'
+  gem 'irb'
 end
