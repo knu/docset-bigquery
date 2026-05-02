@@ -647,6 +647,8 @@ task :build => [DOCS_DIR, ICON_FILE] do |t|
                   'Function'
                 when File.basename(path).match?(/\Abigqueryml-/)
                   'Option'
+                when File.basename(path) == 'graph-sql-queries.html'
+                  'Function'
                 else
                   raise "#{path}: Unknown directive: #{title}"
                 end
