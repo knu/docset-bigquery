@@ -193,7 +193,7 @@ namespace :fetch do
 
     wget_options = %W[
       -nv --append-output #{FETCH_LOG} -N -p -E
-      #{'--reject-regex=\?hl=|\?_gl=|://docs\.cloud\.google\.com/(images/(artwork|backgrounds|home|icons|logos)/|bigquery/docs/reference/standard-sql/(endpoint_idle_ttl|bigquery/docs/access-control|tbd)$)|\.md$'}
+      #{'--reject-regex=\?hl=|\?_gl=|://docs\.cloud\.google\.com/bigquery/docs/reference/standard-sql/aggregate-functions$'}
     ]
 
     sh 'wget', *wget_options, DOCS_URI.to_s
