@@ -633,6 +633,8 @@ task :build => [DOCS_DIR, ICON_FILE] do |t|
             title.scan(/(?<ws>(?<w>[A-Z]+)(?: \g<w>)*)/) { |ws,|
               index_item.(path, h, type, ws)
             }
+          when 'API'
+            # Heading only; not a SQL directive.
           when /\A(?:(?<w>(?:[A-Z]+_)*[A-Z]+) )*(?<ow>\[\g<w>\] )?\g<w>\z/
             type =
               case title
